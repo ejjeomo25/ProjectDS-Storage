@@ -1,4 +1,4 @@
-﻿//Default
+//Default
 #include "Character/DSCharacterMovementComponent.h"
 
 //UE

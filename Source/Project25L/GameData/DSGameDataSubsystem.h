@@ -117,7 +117,7 @@ public:
 	template<typename TDataRow, typename TEnumType>
 	TDataRow* GetDataRow(EDataTableType DataTableType, TEnumType DataType);
 
-	FTableRowBase* GetItemData(EDataTableType DataTableType, int32 ItemID);
+	FTableRowBase* GetDataRow(EDataTableType DataTableType, int32 ItemID);
 
 	/**
 	 * DataTables Data Asset에 접근하는 함수.

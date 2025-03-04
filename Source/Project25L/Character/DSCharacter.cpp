@@ -32,6 +32,8 @@ ADSCharacter::ADSCharacter(const FObjectInitializer& ObjectInitializer)
 	bIsCrouched = true;
 
 	InventoryComponent = CreateDefaultSubobject<UDSInventoryComponent>(TEXT("InventoryComponent"));
+
+	SetJumpHeight(false);
 }
 
 void ADSCharacter::AddSkill(const int32 InputID)
@@ -82,4 +84,21 @@ void ADSCharacter::ServerRPC_UseItem_Implementation(int32 ItemID, int32 ItemCoun
 		DS_LOG(DSItemLog, Log, TEXT("ItemID %d ItemCount %d"), ItemID, ItemCount);
 		InventoryComponent->OnItemUsed(ItemID);
 	}
+}
+
+void ADSCharacter::SetJumpHeight(uint8  bIsRun)
+{
+	const float Gravity = 980.0f;
+	float JumpVelocity = 0.f;
+
+	if (bIsRun)
+	{
+		JumpVelocity = FMath::Sqrt(2 * Gravity * RunJumpHeight);
+	}
+	else
+	{
+		JumpVelocity = FMath::Sqrt(2 * Gravity * NomalJumpHeight);
+	}
+
+	GetCharacterMovement()->JumpZVelocity = JumpVelocity;
 }

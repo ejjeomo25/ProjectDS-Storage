@@ -79,7 +79,7 @@ UDSGameDataSubsystem* UDSGameDataSubsystem::Get(UObject* WorldContextObject)
 	return GameInstance->GetSubsystem<UDSGameDataSubsystem>();
 }
 
-FTableRowBase* UDSGameDataSubsystem::GetItemData(EDataTableType DataTableType, int32 ItemID)
+FTableRowBase* UDSGameDataSubsystem::GetDataRow(EDataTableType DataTableType, int32 ItemID)
 {
 	UDataTable* DataTable = GetDataTable(DataTableType);
 

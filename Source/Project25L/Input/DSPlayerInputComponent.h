@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -82,7 +82,6 @@ protected:
 	void Input_UI_Status(const FInputActionValue& InputActionValue);
 
 	
-	void SetJumpHeight(float TargetJumpHeight);
 	void SetSpeed(ESpeedType TargetwalkSpeed);
 
 	ESpeedType CalculateSpeed();
@@ -103,21 +102,17 @@ protected:
 	UPROPERTY(EditAnywhere)
 	uint8 bIsCrouched;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Movement")
-	float NomalJumpHeight = 35.f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Movement")
-	float RunJumpHeight = 40.f;
+	UPROPERTY(EditAnywhere)
+	uint8 bIsRun;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Movement")
-	ECrouchMode CurrentCrouchMode = ECrouchMode::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Camera")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
 	float MouseSensitivity = 1.0f;
 
 	float PressedTime = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
 	float HoldTime = 0.3f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ECrouchMode CurrentCrouchMode = ECrouchMode::None;
 };

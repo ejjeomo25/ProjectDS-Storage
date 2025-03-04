@@ -54,7 +54,7 @@ public:
 	ESpeedType CurrentSpeedType;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Speed")
 	TMap<ESpeedType, float> SpeedMode;
 
 };

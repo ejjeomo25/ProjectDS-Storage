@@ -23,10 +23,14 @@ enum class EDataTableType : uint8
 	ItemAccessoryData,
 };
 // 몬스터 타입을 정의한다.
-UENUM(BlueprintType)
-enum class EMonsterType : uint8
+UENUM()
+enum class EMonsterType : int32
 {
-    Temp,
+    None = 0,
+	Weak = 100,
+	Strong = 200,
+	Boss = 400,
+	Max = 500
 };
 
 // 던전 타입
@@ -135,22 +139,27 @@ enum class  ESkillNetSecurityPolicy :uint8
 	ServerOnly				UMETA(DisplayName = "Server Only"),
 };
 
+/**
+ * 	@캐릭터의 이동 속도 유형을 정의
+ */
 UENUM(BlueprintType)
 enum class ESpeedType : uint8
 {
-	None = 0x00 UMETA(DisplayName = "Forward"),
+	None = 0x00 UMETA(DisplayName = "None"),
     Forward = 0x10 UMETA(DisplayName = "Forward"),
     Backward = 0x20 UMETA(DisplayName = "Backward"),
     Sprint = 0x40 UMETA(DisplayName = "Sprint")
 };
 
-
+/**
+ * 	@웅크리기(Crouch) 모드를 정의
+ */
 UENUM(BlueprintType)
 enum class ECrouchMode : uint8
 {
-	None,
-	HoldMode,
-	ToggleMode
+	None UMETA(DisplayName = "None"),
+	HoldMode UMETA(DisplayName = "HoldMode"),
+	ToggleMode UMETA(DisplayName = "ToggleMode")
 };
 
 
@@ -247,4 +256,19 @@ enum class EDSElementType : uint8
 	Fire,				///< 불 속성
 	Ice,				///< 얼음 속성
 	Earth,				///< 대지 속성
+};
+
+/**
+ * @brief 스포너 종류
+ * 
+ * Range : 랜덤 범위에서 스폰된다.
+ * Fixed : 아이템 박스가 고정된 위치에서 스폰되어지고, 
+*  정규분포로 들어가진 아이템이 결정되어진다.
+ */
+UENUM(BlueprintType)
+enum class ESpawnerType : uint8
+{
+	RangeItem,
+	FixedItem,
+	RangeMonster,
 };

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -34,4 +34,5 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Class)
 	TSubclassOf<AActor> ActorClass;
+
 };

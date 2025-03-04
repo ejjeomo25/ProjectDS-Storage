@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "TP_ThirdPersonGameMode.h"
 #include "TP_ThirdPersonCharacter.h"

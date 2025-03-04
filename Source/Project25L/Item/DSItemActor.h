@@ -20,6 +20,9 @@ public:
 	ADSItemActor();
 
 	int32 GetID() { return ItemID; }
+
+	void InitializeItemData(TMap<int32, int32> ItemData) { StoredItems = ItemData; }
+
 protected:                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 	UFUNCTION()
 	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -30,11 +33,16 @@ protected:
 protected:
 
 	UPROPERTY(EditAnywhere, Category = Item)
-	uint32 ItemID;
+	int32 ItemID;
+	
+	//ItemID가 보물 상자일 경우에, StoredItems에 보관한다.
+	UPROPERTY(Transient)
+	TMap<int32, int32> StoredItems;
 
 	UPROPERTY(VisibleAnywhere, Category = Mesh)
 	TObjectPtr<UStaticMeshComponent> Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Collision)
 	TObjectPtr<UBoxComponent> Trigger;
+
 };

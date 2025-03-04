@@ -85,7 +85,7 @@ void UDSPlayerInputComponent::InitialCharacterSetting()
 	
 	SetSpeed(ESpeedType::Forward);
 	
-	SetJumpHeight(NomalJumpHeight);
+	
 	
 }
 
@@ -144,7 +144,7 @@ void UDSPlayerInputComponent::Input_Look_Mouse(const FInputActionValue& InputAct
 
 	if (Value.Y != 0.0f)
 	{
-		Pawn->AddControllerPitchInput(Value.Y * MouseSensitivity);
+		Pawn->AddControllerPitchInput(-Value.Y * MouseSensitivity);
 	}
 }
 
@@ -165,9 +165,11 @@ void UDSPlayerInputComponent::Input_Jump(const FInputActionValue& InputActionVal
 	{
 		if (PlayerController->IsInputKeyDown(EKeys::W))
 		{
-			SetJumpHeight(RunJumpHeight);
+			bIsRun = true;
+			Character->SetJumpHeight(bIsRun);
 		}
 		Character->Jump();
+		bIsRun = false;
 	}
 }
 
@@ -187,7 +189,7 @@ void UDSPlayerInputComponent::Input_StopJumping(const FInputActionValue& InputAc
 	if (IsValid(Character))
 	{
 		Character->StopJumping();
-		SetJumpHeight(NomalJumpHeight);
+		Character->SetJumpHeight(bIsRun);
 	}
 }
 
@@ -401,27 +403,7 @@ void UDSPlayerInputComponent::Input_UI_Status(const FInputActionValue& InputActi
 {
 }
 
-void UDSPlayerInputComponent::SetJumpHeight(float TargetJumpHeight)
-{
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
-	if (!IsValid(PlayerController))
-	{
-		return;
-	}
-	APawn* Pawn = PlayerController->GetPawn();
-	if (!IsValid(Pawn))
-	{
-		return;
-	}
-	ADSCharacter* Character = Cast<ADSCharacter>(Pawn);
-	if (IsValid(Character))
-	{
-		const float Gravity = 980.0f;
-		float JumpVelocity = FMath::Sqrt(2 * Gravity * TargetJumpHeight); 
 
-		Character->GetCharacterMovement()->JumpZVelocity = JumpVelocity;
-	}
-}
 
 void UDSPlayerInputComponent::SetSpeed(ESpeedType TargetwalkSpeed)
 {

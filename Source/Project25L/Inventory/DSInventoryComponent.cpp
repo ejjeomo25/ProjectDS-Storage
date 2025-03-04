@@ -105,19 +105,19 @@ void UDSInventoryComponent::OnItemUsed(int32 ItemID)
 	switch (ItemType)
 	{
 	case EItemType::Accessory:
-		ItemData = DataSubsystem->GetItemData(EDataTableType::ItemAccessoryData, ItemID);
+		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemAccessoryData, ItemID);
 		SelectedItem = NewObject<UDSItemAccessory>();
 		break;
 	case EItemType::Grenade:
-		ItemData = DataSubsystem->GetItemData(EDataTableType::ItemGrenadeData, ItemID);
+		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemGrenadeData, ItemID);
 		SelectedItem = NewObject<UDSItemGrenade>();
 		break;
 	case EItemType::Potion:
-		ItemData = DataSubsystem->GetItemData(EDataTableType::ItemPotionData, ItemID);
+		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemPotionData, ItemID);
 		SelectedItem = NewObject<UDSItemPotion>();
 		break;
 	case EItemType::Vehicle:
-		ItemData = DataSubsystem->GetItemData(EDataTableType::ItemVehicleData, ItemID);
+		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemVehicleData, ItemID);
 		SelectedItem = NewObject<UDSItemVehicle>();
 		break;
 	}

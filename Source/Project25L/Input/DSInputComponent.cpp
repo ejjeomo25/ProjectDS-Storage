@@ -1,4 +1,4 @@
-﻿// Default 
+// Default 
 #include "Input/DSInputComponent.h"
 
 // UE

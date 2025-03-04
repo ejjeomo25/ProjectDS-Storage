@@ -37,6 +37,8 @@ public:
 
 	UDSInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
+	void SetJumpHeight(uint8 bIsRun);
+
 protected:
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Inventory")
@@ -52,5 +54,13 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> Camera;
+
+protected:
+	/*Character Setting*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Jump")
+	float NomalJumpHeight = 35.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Jump")
+	float RunJumpHeight = 40.f;
 
 };

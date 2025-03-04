@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Defualt
 #include "CoreMinimal.h"
@@ -19,14 +19,28 @@ class PROJECT25L_API ADSSpawnerVolumeBase : public ATriggerVolume
 	GENERATED_BODY()
 	
 public:
+
+	ADSSpawnerVolumeBase();
+
+protected:
+
 	virtual FVector CalculateRandomPosition();
-	
+
+	virtual void BeginPlay() override;
+
+	void SpawnActors();
+
 protected:
-	
-	void SpawnMonster(EMonsterType MonsterType);
-	void SpawnItem(TArray<int32>& ItemIDs);
-protected:
-	
 	UPROPERTY(EditAnywhere, Category = Count)
-	int32 SpawnCount;
+	int32 SpawnMax;
+
+	UPROPERTY(EditAnywhere, Category = Count)
+	int32 SpawnMin;
+
+	UPROPERTY(EditAnywhere, Category = ItemSpawnerType)
+	ESpawnerType SpawnerType;
+
+	UPROPERTY(EditAnywhere, Category = MonsterType)
+	TArray<int32> SpawnIDs;
+
 };

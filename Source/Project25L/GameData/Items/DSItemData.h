@@ -23,7 +23,7 @@ public:
 		: ItemName(TEXT(""))
 		, ItemHolder(0x00)
 		, Probability(0.0f)
-		, Blueprint(nullptr)
+		, ActorClass(nullptr)
 		, Description(TEXT(""))
 	{}
 
@@ -37,7 +37,7 @@ public:
 	float Probability;
 
 	UPROPERTY(EditAnywhere, Category = Actor)
-	TSubclassOf<AActor> Blueprint;
+	TSubclassOf<AActor> ActorClass;
 
 	UPROPERTY(EditAnywhere, Category = Desc)
 	FString Description;
