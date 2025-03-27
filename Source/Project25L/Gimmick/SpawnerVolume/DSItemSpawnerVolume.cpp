@@ -10,6 +10,6 @@ void ADSItemSpawnerVolume::BeginPlay()
 
 	if (HasAuthority())
 	{
-		SpawnItem(ItemIDs);
+		// SpawnItem(ItemIDs);
 	}
 }

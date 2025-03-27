@@ -7,6 +7,6 @@ void ADSMonsterSpawnerVolume::BeginPlay()
 
 	if (HasAuthority())
 	{
-		SpawnMonster(MonsterType);
+		// SpawnMonster(MonsterType);
 	}
 }
