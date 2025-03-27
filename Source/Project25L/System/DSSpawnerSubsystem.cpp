@@ -1,4 +1,4 @@
-﻿// Default
+// Default
 #include "System/DSSpawnerSubsystem.h"
 
 // UE
@@ -62,7 +62,7 @@ void UDSSpawnerSubsystem::InitializeData()
 }
 
 
-TMap<int32, int32> UDSSpawnerSubsystem::SelectChestItems(TArray<int32>& ItemIDs, int32 MaxRange, int32 MinRange, FVector& Location, TWeakObjectPtr<AActor> ItemActor)
+TMap<int32, int32> UDSSpawnerSubsystem::SelectChestItems(TArray<int32>& ItemIDs, int32 MaxRange, int32 MinRange, FVector& Location)
 {
 	UWorld* World = GetWorld();
 
@@ -79,7 +79,7 @@ TMap<int32, int32> UDSSpawnerSubsystem::SelectChestItems(TArray<int32>& ItemIDs,
 
 	float TotalProbability = GetTotalItemProbability(ItemIDs);
 
-	for (int32 RandomIdx = 0; RandomIdx < RandomCount; RandomCount++)
+	for (int32 RandomIdx = 0; RandomIdx < RandomCount; RandomIdx++)
 	{
 		ItemID = GetRandomItemID(ItemIDs, TotalProbability);
 
@@ -101,12 +101,6 @@ TMap<int32, int32> UDSSpawnerSubsystem::SelectChestItems(TArray<int32>& ItemIDs,
 		DS_LOG(DSItemLog, Log, TEXT("Selected Item %d, Spawn!"), ItemID);
 	}
 
-	if (Result.IsEmpty() == false)
-	{
-		//박스 중간으로 만든다.
-		//보물상자 번호를 넣어준다.
-		ItemActor = CreateActor(ESpawnerType::RangeItem, 101, Location);
-	}
 	return Result;
 }
 
@@ -130,16 +124,22 @@ AActor* UDSSpawnerSubsystem::CreateActor(ESpawnerType SpawnType,int32 SpawnID, F
 
 	if (SpawnType == ESpawnerType::RangeMonster)
 	{
-		FDSNonCharacterStat*NonCharacterData = static_cast<FDSNonCharacterStat*>(DataSubsystem->GetDataRow(EDataTableType::NonCharacterData, SpawnID));
+		const FDSNonCharacterStat* NonCharacterData = static_cast<FDSNonCharacterStat*>(DataSubsystem->GetDataRowByID(EDataTableType::NonCharacterData, SpawnID));
 
-		ActorClass = NonCharacterData->ActorClass;
-
+		if (nullptr != NonCharacterData)
+		{
+			ActorClass = NonCharacterData->ActorClass;
+		}
+	
 	}
 	else
 	{
-		FDSItemData* ItemData = static_cast<FDSItemData*>(DataSubsystem->GetDataRow(EDataTableType::ItemData, SpawnID));
+		const FDSItemData* ItemData = static_cast<FDSItemData*>(DataSubsystem->GetDataRowByID(EDataTableType::ItemData, SpawnID));
 
-		ActorClass = ItemData->ActorClass;
+		if (nullptr != ItemData)
+		{
+			ActorClass = ItemData->ActorClass;
+		}
 	}
 
 	AActor* SpawnObj = nullptr;
@@ -166,6 +166,8 @@ int32 UDSSpawnerSubsystem::GetRandomItemID(TArray<int32>& ItemIDs, float TotalPr
 
 	for (const FSpawnItemInfo& Item : ItemInfo)
 	{
+		if (ItemIDs.Contains(Item.ItemID) == false) continue;
+
 		AccumulatedProbability += Item.SpawnProbability;
 		if (RandomValue <= AccumulatedProbability)
 		{

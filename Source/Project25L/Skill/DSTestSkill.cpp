@@ -37,9 +37,6 @@ UDSTestSkill_1::UDSTestSkill_1(FObjectInitializer& ObjectInitializer)
 	InstancingPolicy = ESkillInstancingPolicy::NonInstanced;
 }
 
-
-
-
 UDSTestSkill_2::UDSTestSkill_2()
 {
 	bSkillHasCooltime = false;

@@ -9,9 +9,13 @@
 #include "DSSkillSpec.h"
 #include "DSSkillActorInfo.h"
 #include "Player/DSCheatManager.h"
+#include "System/DSEnums.h"
 
 //UHT
 #include "DSSkillControlComponent.generated.h"
+
+// Delegate
+DECLARE_MULTICAST_DELEGATE(FOnSkillPressed);
 
 UCLASS()
 class PROJECT25L_API UDSSkillControlComponent : public UPawnComponent
@@ -25,12 +29,15 @@ public:
 	/** called when the Skill Control Component SkillActorInfo has a PlayerController set. */
 	virtual void OnPlayerControllerSet() { }
 
+
+	// SkillInputEvents
+	TMap<ESkillType, FOnSkillPressed> OnSkillPressedEvents;
+
 	// --------------------------------------
 	//	The important functions
 	// --------------------------------------
 
 	FDSSkillSpecHandle AddSkill(const FDSSkillSpec& Spec);
-
 	virtual bool TryActivateSkill(FDSSkillSpecHandle AbilityToActivate, bool bAllowRemoteActivation = true);
 
 	/** Will be called from AddSkill or from OnRep. Initializes events (inputs) with the add skill */

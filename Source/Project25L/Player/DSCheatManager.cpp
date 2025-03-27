@@ -1,4 +1,4 @@
-﻿//Default
+//Default
 #include "Player/DSCheatManager.h"
 
 //UE
@@ -212,6 +212,38 @@ void UDSCheatManager::DisplaySkillCooltime(const int32 InputID)
 	#endif
 }
 
+void UDSCheatManager::StoreItems(int32 PlayerID, int32 ItemID, int32 ItemCount)
+{
+#if USING_CHEAT_MANAGER
+
+	UWorld* World = GetWorld();
+
+	check(World);
+
+	for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		if (PlayerID == 0)
+		{
+			APlayerController* PlayerController = Iterator->Get();
+			if (IsValid(PlayerController))
+			{
+				ADSCharacter* Character = PlayerController->GetPawn<ADSCharacter>();
+
+				if (IsValid(Character))
+				{
+					//아이템 저장할 수 있도록 함.
+				}
+			}
+			break;
+		}
+
+		PlayerID--;
+
+	}
+
+#endif
+}
+
 void UDSCheatManager::UseItems(int32 PlayerID, int32 ItemID, int32 ItemCount)
 {
 #if USING_CHEAT_MANAGER
@@ -234,6 +266,39 @@ void UDSCheatManager::UseItems(int32 PlayerID, int32 ItemID, int32 ItemCount)
 					//인벤토리에 넣지 않고 적용할 수 있는 치트 로직 구현
 					Character->ServerRPC_UseItem(ItemID,ItemCount);
 					DS_LOG(DSItemLog, Warning, TEXT("UseItem"));
+				}
+			}
+			break;
+		}
+
+		PlayerID--;
+
+	}
+
+#endif
+}
+
+void UDSCheatManager::PrintPlayerItems(int32 PlayerID)
+{
+#if USING_CHEAT_MANAGER
+
+	UWorld* World = GetWorld();
+
+	check(World);
+
+	for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		if (PlayerID == 0)
+		{
+			APlayerController* PlayerController = Iterator->Get();
+			if (IsValid(PlayerController))
+			{
+				ADSCharacter* Character = PlayerController->GetPawn<ADSCharacter>();
+
+				if (IsValid(Character))
+				{
+					//인벤토리에 넣지 않고 적용할 수 있는 치트 로직 구현
+					Character->ServerRPC_PrintItem();
 				}
 			}
 			break;

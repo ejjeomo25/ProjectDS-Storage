@@ -42,7 +42,6 @@ void UDSStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 기본 스탯을 초기화합니다.
 	InitializeStats();
 }
 
@@ -61,18 +60,18 @@ void UDSStatComponent::ModifyHP(float Delta)
 	if (HP > CurrentStat.MaxHP)
 	{
 		HP = CurrentStat.MaxHP;
-		DS_LOG(LogTemp, Log, TEXT("Over MaxHP"));
+		DS_LOG(DSStatLog, Log, TEXT("Over MaxHP"));
 	}
 	
 	if (HP <= 0.f)
 	{
 		HP = 0.f;
-		DS_LOG(LogTemp, Log, TEXT("Die"));
+		DS_LOG(DSStatLog, Log, TEXT("Die"));
 	}
 	
 	DSEVENT_DELEGATE_INVOKE(GameEvent.OnHPChanged, HP);
 
-	DS_LOG(LogTemp, Log, TEXT("[%s] [%s] HP 변경: %+f, 새 HP: %f"), *GetOwner()->GetName(), *GetName(), Delta, HP);
+	DS_LOG(DSStatLog, Log, TEXT("[%s] [%s] HP 변경: %+f, 새 HP: %f"), *GetOwner()->GetName(), *GetName(), Delta, HP);
 }
 
 void UDSStatComponent::OnRep_CurrentStat()
@@ -92,7 +91,7 @@ void UDSStatComponent::InitializeStats()
 	UDSGameDataSubsystem* DataSubsystem = UDSGameDataSubsystem::Get(this);
 	check(DataSubsystem);
 
-	FDSCharacterStat* CharacterStatData = DataSubsystem->GetDataRow<FDSCharacterStat, ECharacterType>(EDataTableType::CharacterData, CharcterType);
+	FDSCharacterStat* CharacterStatData = DataSubsystem->GetDataRowByEnum<FDSCharacterStat, ECharacterType>(EDataTableType::CharacterData, this->CharcterType);
 	if (nullptr != CharacterStatData)
 	{
 		DefaultStat = *CharacterStatData;
@@ -108,7 +107,7 @@ void UDSStatComponent::InitializeStats()
 	}
 	else
 	{
-		DS_LOG(LogTemp, Warning, TEXT("Requested Character Data for type %s not found!"), *UEnum::GetValueAsString(CharcterType));
+		DS_LOG(DSStatLog, Warning, TEXT("Requested Character Data for type %s not found!"), *UEnum::GetValueAsString(CharcterType));
 	}
 }
 
@@ -119,7 +118,7 @@ float UDSStatComponent::GetDefaultStatByEnum(EDSStatType StatType) const
 	{
 		return DefaultStat.*(*MemberPtr);
 	}
-	
+	DS_LOG(DSStatLog, Warning, TEXT("Requested DefaultStat for type %s not found!"), *UEnum::GetValueAsString(StatType));
 	return 0.0f;
 }
 
@@ -147,9 +146,7 @@ float UDSStatComponent::GetFinalStat(EDSStatType StatType) const
 		}
 	}
 
-	// TODO : Item Stat 추가
-
-	// 최종 스탯 = (기본 스탯 + Additive 버프) * (1 + Multiplicative 버프)
+	// 최종 스탯 = (기본 스탯 + Additive 수치) * (1 + Multiplicative 수치)
 	float DefaultStatValue = GetDefaultStatByEnum(StatType);
 	float FinalStat = (DefaultStatValue + TotalAddend) * (1.f + TotalMultiplier);
 	return FinalStat > 0.f ? FinalStat : 0.f;
@@ -183,7 +180,7 @@ void UDSStatComponent::ApplyBuff(EDSStatType InStatType, EOperationType InOperat
 	NewEntry.BuffValue = InBuffValue;
 	ActiveBuffs.Add(NewEntry);
 
-	DS_LOG(LogTemp, Log, TEXT("[%s] %s 버프 적용: ID=%d, %s %f, 지속시간: %f초"), *GetName(), *UEnum::GetValueAsString(InStatType), NewEntry.BuffID, *UEnum::GetValueAsString(InOperationType), InBuffValue, InDuration);
+	DS_LOG(DSStatLog, Log, TEXT("[%s] %s 버프 적용: ID=%d, %s %f, 지속시간: %f초"), *GetName(), *UEnum::GetValueAsString(InStatType), NewEntry.BuffID, *UEnum::GetValueAsString(InOperationType), InBuffValue, InDuration);
 
 	// 버프 제거 타이머 설정
 	FTimerHandle TimerHandle;
@@ -211,7 +208,7 @@ void UDSStatComponent::RemoveBuff(int32 InBuffID)
 		float RemovedBuffValue = ActiveBuffs[RemovedIndex].BuffValue;
 		EDSStatType RemovedBuffStatType = ActiveBuffs[RemovedIndex].StatType;
 		EOperationType RemovedBuffOperationType = ActiveBuffs[RemovedIndex].OperationType;
-		DS_LOG(LogTemp, Log, TEXT("[%s] %s 버프 제거: ID=%d, %s %f"), *GetName(), *UEnum::GetValueAsString(RemovedBuffStatType), InBuffID, *UEnum::GetValueAsString(RemovedBuffOperationType), RemovedBuffValue);
+		DS_LOG(DSStatLog, Log, TEXT("[%s] %s 버프 제거: ID=%d, %s %f"), *GetName(), *UEnum::GetValueAsString(RemovedBuffStatType), InBuffID, *UEnum::GetValueAsString(RemovedBuffOperationType), RemovedBuffValue);
 		ActiveBuffs.RemoveAt(RemovedIndex);
 	}
 

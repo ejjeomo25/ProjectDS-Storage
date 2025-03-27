@@ -3,7 +3,7 @@
 
 // Game
 #include "DSLogChannels.h"
-#include "GameData/Items/DSItemPotionData.h"
+#include "GameData/Items/DSItemStatData.h"
 
 UDSItemPotion::UDSItemPotion()
 	: Super()
@@ -13,11 +13,9 @@ UDSItemPotion::UDSItemPotion()
 
 void UDSItemPotion::Initialize(FTableRowBase* DataTableRow)
 {
-	FDSItemPotionData* ItemData = static_cast<FDSItemPotionData*>(DataTableRow);
-
+	FDSItemStatData* ItemData = static_cast<FDSItemStatData*>(DataTableRow);
 	if (nullptr != ItemData)
 	{
-		Duration = ItemData->Duration;
 	}
 }
 

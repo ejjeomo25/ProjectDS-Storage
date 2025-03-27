@@ -12,7 +12,9 @@
 				"Engine",
 				"EnhancedInput",
 				"CoreUObject",
-				"AIModule"
+				"AIModule",
+				"ModularGameplay",
+				"UMG"
 			]
 		}
 	],

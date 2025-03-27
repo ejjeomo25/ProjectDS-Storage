@@ -7,14 +7,27 @@
 #include "InputMappingContext.h"
 
 //Game
-#include "Character/DSCharacter.h"
-#include "Character/DSCharacterMovementComponent.h"
 #include "DSLogChannels.h"
-#include "Input/DSInputComponent.h"
-#include "Player/DSPlayerController.h"
-#include "Item/DSItemActor.h"
+
 #include "System/DSEventSystems.h"
+#include "System/DSGameUtils.h"
+#include "System/DSUIManagerSubsystem.h"
+
+#include "Character/DSCharacter.h"
 #include "Character/DSCharacter_Girl.h"
+#include "Character/DSCharacterMovementComponent.h"
+#include "Player/DSPlayerController.h"
+
+#include "Input/DSInputComponent.h"
+#include "Inventory/DSInventoryComponent.h"
+#include "Item/DSItemActor.h"
+
+#include "Skill/DSSkillControlComponent.h"
+#include "Skill/DSNoGearFlightSkill.h"
+
+#include "UI/DSGameMunu.h"
+#include "HUD/DSHUD.h"
+
 
 UDSPlayerInputComponent::UDSPlayerInputComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -24,17 +37,7 @@ UDSPlayerInputComponent::UDSPlayerInputComponent(const FObjectInitializer& Objec
 
 void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponent)
 {
-	APlayerController *PlayerController = Cast<ADSPlayerController>(GetOwner());
-	if (!IsValid(PlayerController))
-	{
-		return;
-	}
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
-	
-	check(Subsystem);
-	Subsystem->ClearAllMappings();
-	Subsystem->AddMappingContext(DefaultIMC, 0);
+	SetInputMappingContext(EInputMappingContextType::DefaultIMC);
 
 	DSInputComponent = Cast<UDSInputComponent>(InputComponent);
 
@@ -51,7 +54,7 @@ void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponen
 
 		// System
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Pause")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Pause);
-		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Interaction")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Interaction);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Interaction")), ETriggerEvent::Completed, this, &UDSPlayerInputComponent::Input_Interaction);
 		
 		// Skill
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.1")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Skill_1);
@@ -72,26 +75,54 @@ void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponen
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Weapon.SecondaryAction")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Weapon_SecondaryAction);
 	
 		//UI
-		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.UI.Inventory")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_UI_Inventory);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.UI.Inventory")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_UI_Inventory);
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.UI.Status")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_UI_Status);
-	
+
+
+		// FlightSkill
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Begin")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Begin);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Up")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Up);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Down")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Down);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Dodge")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Dodge);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Boost")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Boost);
 	}
 
+	DSEVENT_DELEGATE_BIND(OnInputMappingChangedEvent, this, &UDSPlayerInputComponent::SetInputMappingContext);
+}
+
+void UDSPlayerInputComponent::SetInputMappingContext(EInputMappingContextType NewIMCType)
+{
+	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+	if (false == IsValid(PlayerController))
+	{
+		return;
+	}
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+	check(Subsystem);
+	
+	Subsystem->ClearAllMappings();
+	Subsystem->AddMappingContext(InputMappingContexts[NewIMCType], 0);
 }
 
 void UDSPlayerInputComponent::InitialCharacterSetting()
 {
 	bIsCrouched = false;
-	
+	bIsInventoryMode = false;
 	SetSpeed(ESpeedType::Forward);
-	
-	
-	
+}
+
+void UDSPlayerInputComponent::OnUnregister()
+{
+	DSEVENT_DELEGATE_REMOVE(OnInputMappingChangedEvent, this);
+
+	Super::OnUnregister();
 }
 
 void UDSPlayerInputComponent::Input_Move(const FInputActionValue& InputActionValue)
 {
 	FVector2D MovementVector = InputActionValue.Get<FVector2D>();
+
 	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
 	if (!IsValid(PlayerController))
 	{
@@ -102,6 +133,7 @@ void UDSPlayerInputComponent::Input_Move(const FInputActionValue& InputActionVal
 	{
 		return;
 	}
+
 	const FRotator Rotation = PlayerController->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
@@ -119,7 +151,6 @@ void UDSPlayerInputComponent::Input_Move(const FInputActionValue& InputActionVal
 	Pawn = PlayerController->GetPawn();
 	Pawn->AddMovementInput(ForwardDirection, MovementVector.Y);
 	Pawn->AddMovementInput(RightDirection, MovementVector.X);
-
 }
 
 
@@ -272,7 +303,7 @@ void UDSPlayerInputComponent::Input_FastRun(const FInputActionValue& InputAction
 
 void UDSPlayerInputComponent::Input_StopFastRun(const FInputActionValue& InputActionValue)
 {
-	SetSpeed(ESpeedType::Backward);
+	SetSpeed(ESpeedType::Forward);
 }
 
 void UDSPlayerInputComponent::Input_Pause(const FInputActionValue& InputActionValue)
@@ -287,24 +318,11 @@ void UDSPlayerInputComponent::Input_Interaction(const FInputActionValue& InputAc
 	{
 		return;
 	}
-	APawn* Pawn = PlayerController->GetPawn();
-	if (!IsValid(Pawn))
-	{
-		return;
-	}
 	
-	ADSCharacter* Character = Cast<ADSCharacter>(Pawn);
+	ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
 	if (IsValid(Character))
 	{
-		ADSItemActor* Item = Cast< ADSItemActor>(Character->GetSurroundingItem());
-
-		if (IsValid(Item))
-		{
-			int ItemID = Item->GetID();
-
-			Item->SetLifeSpan(0.5f);
-			Character->SetSurroundingItem(nullptr);
-		}
+		Character->TryInteraction();
 	}
 }
 
@@ -377,10 +395,22 @@ void UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Released(const FInputAc
 	if (ClickDuration < HoldTime)
 	{
 		// Basic Weapon: Normal Attack 
-		if (ADSCharacter_Girl* Player = Cast<ADSCharacter_Girl>(Cast<APlayerController>(GetOwner())->GetPawn()))
+		APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+		if (!IsValid(PlayerController))
 		{
-			DSEVENT_DELEGATE_INVOKE(Player->OnSkillPressedEvents[ESkillType::MouseLSkill]);
+			return;
 		}
+
+		ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
+		if (IsValid(Character))
+		{
+			UDSSkillControlComponent* SkillControlComponent = Character->GetSkillControlComponent();
+			if(IsValid(SkillControlComponent))
+			{
+				DSEVENT_DELEGATE_INVOKE(SkillControlComponent->OnSkillPressedEvents[ESkillType::MouseLSkill]);
+			}
+		}
+		
 	}
 	else
 	{
@@ -397,10 +427,88 @@ void UDSPlayerInputComponent::Input_Weapon_SecondaryAction(const FInputActionVal
 
 void UDSPlayerInputComponent::Input_UI_Inventory(const FInputActionValue& InputActionValue)
 {
+	DS_NETLOG(DSNetLog, Log, TEXT("Inventory"));
+
+	ADSPlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	if (IsValid(PlayerController))
+	{
+		if (bIsInventoryMode)
+		{
+			PlayerController->SetGameFocusMode();
+			bIsInventoryMode = false;
+		}
+		else
+		{
+			bIsInventoryMode = true;
+			PlayerController->SetUIFocusMode();
+		}
+
+		APawn* Pawn = PlayerController->GetPawn();
+		if (!IsValid(Pawn))
+		{
+			return;
+		}
+		ADSCharacter* Character = Cast<ADSCharacter>(Pawn);
+
+		if (IsValid(Character))
+		{
+			DSEVENT_DELEGATE_INVOKE(Character->OnInventoryToggle);
+		}
+	}
 }
 
 void UDSPlayerInputComponent::Input_UI_Status(const FInputActionValue& InputActionValue)
 {
+}
+
+void UDSPlayerInputComponent::Input_Skil_Flight_Begin(const FInputActionValue& InputActionValue)
+{
+	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+	if (false == IsValid(PlayerController))
+	{
+		return;
+	}
+	
+	ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
+	if(false == IsValid(Character))
+	{
+		return;
+	}
+
+	UDSSkillControlComponent* SkillControlComponent = Character->GetSkillControlComponent();
+
+	if(false == IsValid(SkillControlComponent))
+	{
+		return;
+	}
+
+	// 비행 스킬을 가지고 있다면
+	if(FDSSkillSpec* SkilSpec = SkillControlComponent->FindSkillSpecFromClass(UDSNoGearFlightSkill::StaticClass()))
+	{
+		DSEVENT_DELEGATE_INVOKE(SkillControlComponent->OnSkillPressedEvents[ESkillType::FlightSkill]);
+		 DSEVENT_DELEGATE_INVOKE(OnInputMappingChangedEvent, EInputMappingContextType::FlightIMC);
+	}
+}
+
+void UDSPlayerInputComponent::Input_Skil_Flight_Up(const FInputActionValue& InputActionValue)
+{
+	DS_LOG(DSSkillLog, Warning, TEXT(""));
+}
+
+void UDSPlayerInputComponent::Input_Skil_Flight_Down(const FInputActionValue& InputActionValue)
+{
+	DS_LOG(DSSkillLog, Warning, TEXT(""));
+}
+
+void UDSPlayerInputComponent::Input_Skil_Flight_Dodge(const FInputActionValue& InputActionValue)
+{
+	DS_LOG(DSSkillLog, Warning, TEXT(""));
+}
+
+void UDSPlayerInputComponent::Input_Skil_Flight_Boost(const FInputActionValue& InputActionValue)
+{
+	DS_LOG(DSSkillLog, Warning, TEXT(""));
 }
 
 

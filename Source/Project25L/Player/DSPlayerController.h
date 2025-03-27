@@ -21,7 +21,10 @@ public:
 
 public:
 
-	void PlayDoorTransition();
+	void ShowUI();
+	void SetUIFocusMode();
+	void SetGameFocusMode();
+	
 
 public:
 	/*Cheat*/
@@ -39,5 +42,4 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDSPlayerInputComponent> DSPlayerInputComponent;
-
 };

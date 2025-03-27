@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -54,7 +54,7 @@ public:
 	ESpeedType CurrentSpeedType;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Speed")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Settings")
 	TMap<ESpeedType, float> SpeedMode;
 
 };

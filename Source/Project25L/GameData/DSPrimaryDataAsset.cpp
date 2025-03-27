@@ -1,2 +1,2 @@
-﻿// Default
+// Default
 #include "GameData/DSPrimaryDataAsset.h"

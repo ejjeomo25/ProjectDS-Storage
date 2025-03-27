@@ -34,7 +34,7 @@ void UDSSkillBase::SetRemoteInstanceHasEnded()
 
 void UDSSkillBase::NotifyAvatarDestroyed()
 {
-    OnSkillDeactivated(*this);
+    OnSkillDeactivated();
 }
 
 // 스킬이 SkillControlComponent에 등록될 때 호출됨
@@ -47,7 +47,7 @@ void UDSSkillBase::OnAddSkill(const FDSSkillActorInfo* ActorInfo, const FDSSkill
 	{
 		SetCurrentActorInfo(Spec.Handle, ActorInfo);
 
-		OnSkillInitialized(*this);
+		OnSkillInitialized();
 	}
 }
 
@@ -127,7 +127,7 @@ UDSSkillControlComponent* UDSSkillBase::GetSkillControlComponent() const
 
 
 // -------------------------------------- ISkillLifeCycle --------------------------------------
-void UDSSkillBase::OnSkillInitialized(UDSSkillBase& Skill)
+void UDSSkillBase::OnSkillInitialized()
 {
 	if (nullptr == CurrentActorInfo)
 	{
@@ -160,11 +160,11 @@ void UDSSkillBase::OnSkillInitialized(UDSSkillBase& Skill)
 	}
 }
 
-void UDSSkillBase::OnSkillActivated(UDSSkillBase& Skill)
+void UDSSkillBase::OnSkillActivated()
 {
 }
 
-void UDSSkillBase::OnSkillDeactivated(UDSSkillBase& Skill)
+void UDSSkillBase::OnSkillDeactivated()
 {
 }
 
@@ -256,6 +256,9 @@ bool UDSSkillBase::CommitSkill(const FDSSkillSpecHandle Handle, const FDSSkillAc
 
 	// Broadcast this commitment
 	ActorInfo->SkillControlComponent->NotifySkillCommit(this);
+
+	OnSkillActivated();
+
 	return true;
 }
 

@@ -10,6 +10,7 @@
 #include "DSSkillBase.h"
 #include "Character/DSCharacterBase.h"
 #include "DSLogChannels.h"
+#include "System/DSEventSystems.h"
 
 
 UDSSkillControlComponent::UDSSkillControlComponent(const FObjectInitializer& ObjectInitializer)
@@ -36,6 +37,9 @@ void UDSSkillControlComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UDSSkillControlComponent, ActivatableSkills);
+	DOREPLIFETIME(UDSSkillControlComponent, SkillOwnerActor);
+	DOREPLIFETIME(UDSSkillControlComponent, SkillAvatarActor);
+	DOREPLIFETIME(UDSSkillControlComponent, BlockedSkillBindings);
 }
 
 void UDSSkillControlComponent::InitializeComponent()
@@ -59,6 +63,15 @@ void UDSSkillControlComponent::OnRegister()
 
 void UDSSkillControlComponent::OnUnregister()
 {
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseLSkill], this);
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseLHoldSkill], this);
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseRSkill], this);
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::Skill1], this);
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::Skill2], this);
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::FarmingSkill], this);
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::UltimateSkill], this);
+	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::FlightSkill], this);
+
 	Super::OnUnregister();
 }
 
@@ -693,6 +706,7 @@ FDSSkillSpecHandle UDSSkillControlComponent::AddSkill(const FDSSkillSpec& Spec)
 bool UDSSkillControlComponent::TryActivateSkill(FDSSkillSpecHandle SkillToActivate, bool bAllowRemoteActivation)
 {
 	FDSSkillSpec* Spec = FindSkillSpecFromHandle(SkillToActivate);
+
 	if (!Spec)
 	{
 		//DS_NETLOG(DSSkillLog, Warning, TEXT("TryActivateSkill called with invalid Handle"));
@@ -705,7 +719,7 @@ bool UDSSkillControlComponent::TryActivateSkill(FDSSkillSpecHandle SkillToActiva
 		return false;
 	}
 
-	UDSSkillBase* Skill= Spec->Skill;
+	UDSSkillBase* Skill = Spec->Skill;
 
 	if (!IsValid(Skill))
 	{
@@ -1277,16 +1291,15 @@ void UDSSkillControlComponent::InitSkillActorInfo(AActor* InOwnerActor, AActor* 
 		}
 	}
 
-	// LocalAnimMontageInfo = FGameplayAbilityLocalAnimMontage();
-// if (IsOwnerActorAuthoritative())
-// {
-// 	SetRepAnimMontageInfo(FGameplayAbilityRepAnimMontage());
-// }
-// 
-// if (bPendingMontageRep)
-// {
-// 	OnRep_ReplicatedAnimMontage();
-// }
+	OnSkillPressedEvents.Add(ESkillType::MouseLSkill, FOnSkillPressed());
+	OnSkillPressedEvents.Add(ESkillType::MouseLHoldSkill, FOnSkillPressed());
+	OnSkillPressedEvents.Add(ESkillType::MouseRSkill, FOnSkillPressed());
+	OnSkillPressedEvents.Add(ESkillType::Skill1, FOnSkillPressed());
+	OnSkillPressedEvents.Add(ESkillType::Skill2, FOnSkillPressed());
+	OnSkillPressedEvents.Add(ESkillType::FarmingSkill, FOnSkillPressed());
+	OnSkillPressedEvents.Add(ESkillType::UltimateSkill, FOnSkillPressed());
+	OnSkillPressedEvents.Add(ESkillType::FlightSkill, FOnSkillPressed());
+
 }
 
 void UDSSkillControlComponent::RefreshSkillActorInfo()

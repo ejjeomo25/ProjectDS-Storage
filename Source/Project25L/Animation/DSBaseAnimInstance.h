@@ -21,22 +21,13 @@ public:
 	UDSBaseAnimInstance();
 
 	UFUNCTION()
-	void PlayPunchMontage();
+	void PlayPunchMontage(float InPlayRate);
 
 protected:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override; 
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
-	TObjectPtr<UAnimMontage> PunchMontage;
-
-	UFUNCTION()
-	void AnimNotify_PunchHitCheck();
-
-	UFUNCTION()
-	void AnimNotify_NextPunchCheck();
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	TObjectPtr<class ADSCharacterBase> Player;
 

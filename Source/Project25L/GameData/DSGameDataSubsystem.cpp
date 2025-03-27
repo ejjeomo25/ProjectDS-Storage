@@ -9,6 +9,7 @@
 #include "GameData/DSCharacterStat.h"
 #include "GameData/DSDataTables.h"
 #include "GameData/DSNonCharacterStat.h"
+#include "GameData/Skill/DSComboActionData.h"
 
 UDSGameDataSubsystem::UDSGameDataSubsystem()
 {
@@ -21,7 +22,7 @@ void UDSGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 
 	LoadDataTables();
-	LoadAllDataAssets();
+	LoadAllDataAssetsAsync();
 }
 
 void UDSGameDataSubsystem::Deinitialize()
@@ -30,9 +31,11 @@ void UDSGameDataSubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
-void UDSGameDataSubsystem::LoadAllDataAssets()
+void UDSGameDataSubsystem::LoadAllDataAssetsAsync()
 {
-	LoadDataAsset<UDSCharacterDataAsset, ECharacterType>(CharacterDataMap);
+	PendingAssetLoadsCount = 1;
+
+	LoadDataAssetAsync<UDSCharacterDataAsset, ECharacterType>(CharacterDataMap);
 
 }
 
@@ -45,12 +48,12 @@ void UDSGameDataSubsystem::LoadDataTables()
 	else if (DataTablesAsset.ToSoftObjectPath().IsValid())
 	{
 		DataTables = DataTablesAsset.LoadSynchronous();
-		DS_LOG(LogTemp, Log, TEXT("DataTables is loaded"));
+		DS_LOG(DSDataLog, Log, TEXT("DataTables is loaded"));
 	}
 
 	if (!DataTables)
 	{
-		DS_LOG(LogTemp, Warning, TEXT("DataTables asset is not loaded or assigned!"));
+		DS_LOG(DSDataLog, Warning, TEXT("DataTables asset is not loaded or assigned!"));
 	}
 }
 
@@ -61,6 +64,11 @@ const UDSCharacterDataAsset* UDSGameDataSubsystem::GetCharacterDataByType(EChara
 		return *FoundData;
 	}
 	return nullptr;
+}
+
+const UDSComboActionData* UDSGameDataSubsystem::GetComboActionData() const
+{
+	return ComboActionData;
 }
 
 UDSGameDataSubsystem* UDSGameDataSubsystem::Get(UObject* WorldContextObject)
@@ -79,19 +87,19 @@ UDSGameDataSubsystem* UDSGameDataSubsystem::Get(UObject* WorldContextObject)
 	return GameInstance->GetSubsystem<UDSGameDataSubsystem>();
 }
 
-FTableRowBase* UDSGameDataSubsystem::GetDataRow(EDataTableType DataTableType, int32 ItemID)
+FTableRowBase* UDSGameDataSubsystem::GetDataRowByID(EDataTableType DataTableType, int32 DataID)
 {
 	UDataTable* DataTable = GetDataTable(DataTableType);
 
 	if (IsValid(DataTable))
 	{
-		FString ID = FString::Printf(TEXT("%d"), ItemID);
+		FString ID = FString::Printf(TEXT("%d"), DataID);
 
 		FName DataName = FName(ID);
 
 		FTableRowBase* Row = DataTable->FindRow<FTableRowBase>(DataName, ID);
 
-		if (Row != nullptr)
+		if (nullptr != Row)
 		{
 			return Row;
 		}
@@ -111,6 +119,6 @@ UDataTable* UDSGameDataSubsystem::GetDataTable(EDataTableType InTableType) const
 		}
 	}
 
-	DS_LOG(LogTemp, Warning, TEXT("Requested DataTable for type %d not found!"), static_cast<uint8>(InTableType));
+	DS_LOG(DSDataLog, Warning, TEXT("Requested DataTable for type %d not found!"), static_cast<uint8>(InTableType));
 	return nullptr;
 }

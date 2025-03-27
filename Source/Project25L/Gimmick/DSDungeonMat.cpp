@@ -1,9 +1,8 @@
-﻿// Default
+// Default
 #include "Gimmick/DSDungeonMat.h"
 
 // UE
 #include "Components/BoxComponent.h"
-#include "Components/StaticMeshComponent.h"
 
 // Game
 #include "Character/DSCharacter.h"
@@ -19,10 +18,8 @@ ADSDungeonMat::ADSDungeonMat()
 	, WaitSec(3.f)
 {
 	Trigger = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	
+
 	RootComponent = Trigger;
-	Mesh->SetupAttachment(Trigger);
 }
 
 void ADSDungeonMat::BindEvents()
@@ -34,9 +31,6 @@ void ADSDungeonMat::BindEvents()
 		Trigger->OnComponentEndOverlap.RemoveAll(this);
 		Trigger->OnComponentEndOverlap.AddDynamic(this, &ADSDungeonMat::OnComponentEndOverlap);
 	}
-
-	DSEVENT_DELEGATE_BIND(GameEvent.OnGimmickStateChanged, this, &ADSDungeonMat::OnGimmickStateChanged);
-
 }
 
 void ADSDungeonMat::UnbindEvents()
@@ -46,8 +40,6 @@ void ADSDungeonMat::UnbindEvents()
 		Trigger->OnComponentBeginOverlap.RemoveAll(this);
 		Trigger->OnComponentEndOverlap.RemoveAll(this);
 	}
-
-	DSEVENT_DELEGATE_REMOVE(GameEvent.OnGimmickStateChanged, this);
 }
 
 void ADSDungeonMat::InitializeData(const FString& DoorDestination)
@@ -55,30 +47,24 @@ void ADSDungeonMat::InitializeData(const FString& DoorDestination)
 	Destination = DoorDestination;
 }
 
-void ADSDungeonMat::OnGimmickStateChanged(bool bShouldChange)
-{
-	Mesh->SetVisibility(bShouldChange);
-}
 
 void ADSDungeonMat::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (HasAuthority() == false)
+	{
+		return;
+	}
 	ADSCharacter* Character = Cast<ADSCharacter>(OtherActor);
 
 	if (IsValid(Character))
 	{
-		// 오버랩된 플레이어가 비어있다면, 처음 입장한 플레이어로 인식되어진다.
-		if (OverlappedPlayers.IsEmpty())
-		{
-			//처음 입장하면, Mesh가 보인다.
-			//하지만 DungeonMat는 현재 World에 배치되어 있기 때문에 Character의 도움을 통해서 Server -> Clients 전달해야한다.
-			if (IsValid(Mesh) && HasAuthority())
-			{
-				DS_NETLOG(DSNetLog, Log, TEXT("First Overlap!"));
-				Character->MulticastRPC_SetGimmickState(!Mesh->GetVisibleFlag());
-			}
-		}
-
 		OverlappedPlayers.Add(Character);
+		// 오버랩된 플레이어가 비어있다면, 처음 입장한 플레이어로 인식되어진다.
+		if (Character->HasAuthority())
+		{
+			//UI를 띄운다.
+			Character->ServerRPC_ReadyPlayer(OverlappedPlayers.Num());
+		}
 
 		UWorld* World = GetWorld();
 
@@ -95,7 +81,7 @@ void ADSDungeonMat::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedCompo
 
 void ADSDungeonMat::OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	
+
 	ADSCharacter* Character = Cast<ADSCharacter>(OtherActor);
 
 	if (IsValid(Character))
@@ -116,11 +102,11 @@ void ADSDungeonMat::OnComponentEndOverlap(UPrimitiveComponent* OverlappedCompone
 			}
 		}
 
-		if (OverlappedPlayers.IsEmpty() && IsValid(Mesh) && HasAuthority())
+		if (Character->HasAuthority())
 		{
-			//비어있으면, 모든 플레이어가 나갔기 때문에 매트를 없앤다.
+			//비어있으면, 모든 플레이어가 나갔기 때문에 UI를 없앤다.
+			Character->ServerRPC_ReadyPlayer(OverlappedPlayers.Num());
 			DS_NETLOG(DSNetLog, Log, TEXT("Last Overlap!"));
-			Character->MulticastRPC_SetGimmickState(!Mesh->GetVisibleFlag());
 		}
 	}
 }
@@ -138,7 +124,7 @@ void ADSDungeonMat::PrepareDungeonTravel()
 
 		if (IsValid(PC))
 		{
-			PC->PlayDoorTransition();
+			PC->ShowUI();
 		}
 	}
 
@@ -164,3 +150,4 @@ void ADSDungeonMat::TravelDungeon()
 	World->ServerTravel(Destination);
 
 }
+

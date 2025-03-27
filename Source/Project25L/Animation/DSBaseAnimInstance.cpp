@@ -40,16 +40,8 @@ void UDSBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	
 }
 
-void UDSBaseAnimInstance::PlayPunchMontage()
+void UDSBaseAnimInstance::PlayPunchMontage(float InPlayRate)
 {
-	Montage_Play(PunchMontage, 1.0f);
+	// Montage_Play(PunchMontage, InPlayRate);
 }
 
-
-void UDSBaseAnimInstance::AnimNotify_PunchHitCheck()
-{
-}
-
-void UDSBaseAnimInstance::AnimNotify_NextPunchCheck()
-{
-}

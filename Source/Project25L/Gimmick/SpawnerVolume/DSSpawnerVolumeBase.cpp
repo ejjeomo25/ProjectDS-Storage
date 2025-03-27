@@ -1,4 +1,4 @@
-﻿
+
 // Default
 #include "Gimmick/SpawnerVolume/DSSpawnerVolumeBase.h"
 
@@ -44,47 +44,74 @@ FVector ADSSpawnerVolumeBase::CalculateRandomPosition()
 
 void ADSSpawnerVolumeBase::SpawnActors()
 {
+
+	switch (SpawnerType)
+	{
+	case ESpawnerType::RangeItem:
+		SpawnInFixedRange();
+		break;
+	case ESpawnerType::FixedItem:
+		SpawnAtFixedLocation();
+		break;
+	case ESpawnerType::RangeMonster:
+		break;
+	default:
+		break;
+	}
+}
+
+void ADSSpawnerVolumeBase::SpawnInFixedRange()
+{
 	UDSSpawnerSubsystem* SpawnerSubsystem = UDSSpawnerSubsystem::Get(this);
 
 	check(SpawnerSubsystem);
 
-	//확률 계산한다.
-	UDSGameDataSubsystem* DataSubsystem = UDSGameDataSubsystem::Get(this);
+	//실제 아이템을 스폰한다.
 
-	check(DataSubsystem);
-
-	if (SpawnerType == ESpawnerType::FixedItem)
+	for (int SpawnID = 0; SpawnID < SpawnIDs.Num(); SpawnID++)
 	{
-		//정규 분포식을 사용해서 아이템을 스폰하지 않고 어떤 아이템이 들어 있는지에 대한 답만 가져온다.
-		//박스 메쉬를 중앙 위치에 생성한다.
+		int32 SpawnThreshold = FMath::RandRange(SpawnMin, SpawnMax);
 
-		TWeakObjectPtr<ADSItemActor> TreasureBox = nullptr;
-		
-		FVector LocationPivot = GetActorLocation();
-
-		FVector Location = { LocationPivot.X + (Brush->Bounds.BoxExtent.X / 2) , LocationPivot.Y + (Brush->Bounds.BoxExtent.Y / 2), LocationPivot.Z };
-
-		TMap<int32, int32> StoredItem = SpawnerSubsystem->SelectChestItems(SpawnIDs, SpawnMax, SpawnMin, Location, TreasureBox);
-		
-		if (TreasureBox->IsValidLowLevel())
+		for (int SpawnCount = 0; SpawnCount < SpawnThreshold; SpawnCount++)
 		{
-			TreasureBox->InitializeItemData(StoredItem);
-		}
-		//StoredItem를 박스 메쉬에게 전달한다.
-	}
-	else
-	{
-		//실제 아이템을 스폰한다.
+			FVector Location = CalculateRandomPosition();
+			TWeakObjectPtr<AActor> Actor = SpawnerSubsystem->CreateActor(SpawnerType, SpawnIDs[SpawnID], Location);
 
-		for (int SpawnID = 0; SpawnID < SpawnIDs.Num(); SpawnID)
-		{
-			int32 SpawnCount = FMath::RandRange(SpawnMin, SpawnMax);
-
-			for (int i = 0; i < SpawnCount; i++)
+			if (Actor->IsValidLowLevel())
 			{
-				FVector Location = CalculateRandomPosition();
-				SpawnerSubsystem->CreateActor(SpawnerType, SpawnID, Location);
+				ADSItemActor* ItemActor = Cast<ADSItemActor>(Actor);
+
+				if (IsValid(ItemActor))
+				{
+					TMap<int32, int32> StoredItem;
+					StoredItem.Add({ ItemActor->GetID(), 1 });
+
+					ItemActor->InitializeItemData(StoredItem);
+				}
 			}
 		}
 	}
+}
+
+void ADSSpawnerVolumeBase::SpawnAtFixedLocation()
+{
+	UDSSpawnerSubsystem* SpawnerSubsystem = UDSSpawnerSubsystem::Get(this);
+
+	check(SpawnerSubsystem);
+
+	//정규 분포식을 사용해서 아이템을 스폰하지 않고 어떤 아이템이 들어 있는지에 대한 답만 가져온다.
+	//박스 메쉬를 중앙 위치에 생성한다.
+	FVector LocationPivot = GetActorLocation();
+
+	FVector Location = { LocationPivot.X + (Brush->Bounds.BoxExtent.X / 2) , LocationPivot.Y + (Brush->Bounds.BoxExtent.Y / 2), LocationPivot.Z };
+
+	TMap<int32, int32> StoredItem = SpawnerSubsystem->SelectChestItems(SpawnIDs, SpawnMax, SpawnMin, Location);
+	TWeakObjectPtr<ADSItemActor> TreasureBox = Cast<ADSItemActor>(SpawnerSubsystem->CreateActor(ESpawnerType::RangeItem, SpawnGiftID, Location));
+
+	//StoredItem를 박스 메쉬에게 전달한다.
+	if (TreasureBox.IsValid())
+	{
+		TreasureBox->InitializeItemData(StoredItem);
+	}
+
 }

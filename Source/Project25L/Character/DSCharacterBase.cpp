@@ -19,7 +19,7 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	//Pawn 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
-	bUseControllerRotationYaw = true;
+	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement()->MaxWalkSpeed = 450.f;
 	GetCharacterMovement()->JumpZVelocity = 0.f; //점프 할 수 없음.
@@ -56,23 +56,16 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	}
 	/*데이터 테이블로 변환 예정*/
 
-	SkillControlComponent = CreateDefaultSubobject<UDSSkillControlComponent>(TEXT("SkillControlComponent"));
+	// SkillControlComponent = CreateDefaultSubobject<UDSSkillControlComponent>(TEXT("SkillControlComponent"));
 	StatComponent = CreateDefaultSubobject<UDSStatComponent>(TEXT("StatComponent"));
 
 }
 
-void ADSCharacterBase::OnTest()
-{
-	DS_NETLOG(DSLog, Warning, TEXT("OnTest 함수 호출됨!"));
-}
+
 
 void ADSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-
-	DSEVENT_DELEGATE_BIND(GameEvent.OnDs_delegate, this, &ADSCharacterBase::OnTest);
-	DSEVENT_DELEGATE_INVOKE(GameEvent.OnDs_delegate);
-	DSEVENT_DELEGATE_REMOVE(GameEvent.OnDs_delegate, this);
 }
 
 void ADSCharacterBase::PossessedBy(AController* NewController)

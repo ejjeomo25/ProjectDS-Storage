@@ -28,6 +28,7 @@ class PROJECT25L_API UDSTestSkill_1 : public UDSSkillBase
 public:
 	UDSTestSkill_1();
 	UDSTestSkill_1(FObjectInitializer& ObjectInitializer);
+
 };
 
 UCLASS()

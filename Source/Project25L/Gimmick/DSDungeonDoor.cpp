@@ -1,4 +1,4 @@
-﻿// Default
+// Default
 #include "Gimmick/DSDungeonDoor.h"
 
 // UE

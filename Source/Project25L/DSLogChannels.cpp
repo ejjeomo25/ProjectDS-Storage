@@ -10,34 +10,60 @@ DEFINE_LOG_CATEGORY(DSLog);
 DEFINE_LOG_CATEGORY(DSNetLog);
 DEFINE_LOG_CATEGORY(DSSkillLog);
 DEFINE_LOG_CATEGORY(DSItemLog);
+DEFINE_LOG_CATEGORY(DSStatLog);
+DEFINE_LOG_CATEGORY(DSDataLog);
+DEFINE_LOG_CATEGORY(DSUILog);
+DEFINE_LOG_CATEGORY(DSInputLog);
 
-FString GetClientServerContextString(UObject* ContextObject)
+PROJECT25L_API FString GetNetModeContextString(UObject* ContextObject)
 {
-	ENetRole Role = ROLE_None;
+    FString ContextInfo = TEXT("[]");
+    if (nullptr ==ContextObject)
+    {
+        return ContextInfo;
+    }
 
-	if (AActor* Actor = Cast<AActor>(ContextObject))
-	{
-		Role = Actor->GetLocalRole();
-	}
-	else if (UActorComponent* Component = Cast<UActorComponent>(ContextObject))
-	{
-		Role = Component->GetOwnerRole();
-	}
+    AActor* Actor = Cast<AActor>(ContextObject);
+    if (nullptr == Actor)
+    {
+        if (UActorComponent* Component = Cast<UActorComponent>(ContextObject))
+        {
+            Actor = Component->GetOwner();
+        }
+    }
 
-	if (Role != ROLE_None)
-	{
-		return (Role == ROLE_Authority) ? TEXT("Server") : TEXT("Client");
-	}
-	else
-	{
+    if (nullptr == Actor)
+    {
+        return ContextInfo;
+    }
+
+    ENetMode NetModeInfo = Actor->GetNetMode();
+    ENetRole LocalRoleInfo = Actor->GetLocalRole();
+    ENetRole RemoteRoleInfo = Actor->GetRemoteRole();
+
+    FString NetModeString = "";
+    if (NetModeInfo == ENetMode::NM_Client)
+    {
 #if WITH_EDITOR
-		if (GIsEditor)
-		{
-			extern ENGINE_API FString GPlayInEditorContextString;
-			return GPlayInEditorContextString;
-		}
+		NetModeString = FString::Printf(TEXT("CLIENT%d"), static_cast<int32>(GPlayInEditorID));
+#else
+		NetModeString = TEXT("CLIENT");
 #endif
-	}
+    }
+    else if (NetModeInfo == ENetMode::NM_Standalone)
+    {
+        NetModeString = TEXT("STANDALONE");
+    }
+    else
+    {
+        NetModeString = TEXT("SERVER");
+    }
 
-	return TEXT("[]");
+    ContextInfo = FString::Printf(TEXT("[%s][%s/%s]"),
+        *StaticEnum<ENetRole>()->GetNameStringByValue(static_cast<int64>(LocalRoleInfo)),
+        *StaticEnum<ENetRole>()->GetNameStringByValue(static_cast<int64>(RemoteRoleInfo)),
+        *NetModeString);
+
+    return ContextInfo;
 }
+

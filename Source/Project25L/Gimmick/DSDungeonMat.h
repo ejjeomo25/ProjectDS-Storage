@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -35,8 +35,6 @@ public:
 
 protected:
 
-	void OnGimmickStateChanged(bool bShouldChange);
-
 	UFUNCTION()
 	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -66,9 +64,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timer)
 	float WaitSec;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Mesh)
-	TObjectPtr<UStaticMeshComponent> Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Collision)
 	TObjectPtr<UBoxComponent> Trigger;

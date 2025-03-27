@@ -1,4 +1,4 @@
-﻿// Default
+// Default
 #include "GameData/DSCharacterDataAsset.h"
 
 // UE

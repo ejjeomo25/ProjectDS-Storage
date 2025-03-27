@@ -3,7 +3,7 @@
 
 // Game
 #include "DSLogChannels.h"
-#include "GameData/Items/DSItemGrenadeData.h"
+#include "GameData/Items/DSItemStatData.h"
 
 UDSItemGrenade::UDSItemGrenade()
 	: Super()
@@ -14,12 +14,10 @@ UDSItemGrenade::UDSItemGrenade()
 
 void UDSItemGrenade::Initialize(FTableRowBase* DataTableRow)
 {
-	FDSItemGrenadeData* ItemData = static_cast<FDSItemGrenadeData*>(DataTableRow);
+	FDSItemStatData* ItemData = static_cast<FDSItemStatData*>(DataTableRow);
 
 	if (nullptr != ItemData)
 	{
-		ThrowDamage = ItemData->ThrowDamage;
-		ThrowRange = ItemData->ThrowRange;
 	}
 }
 

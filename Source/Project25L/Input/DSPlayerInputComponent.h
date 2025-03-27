@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -25,7 +25,7 @@ class UDSInputComponent;
  * 플레이어 입력을 처리하고 InputAction과 GameplayTag를 매핑하는 Component
  */
 
-DECLARE_MULTICAST_DELEGATE();
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInputMappingChanged, EInputMappingContextType);
 
 UCLASS()
 class PROJECT25L_API UDSPlayerInputComponent : public UPawnComponent
@@ -41,7 +41,13 @@ public:
 
 	void SetCrounchMode(ECrouchMode TargetMode);
 
+	/* Change InputMappingContext*/
+	void SetInputMappingContext(EInputMappingContextType NewIMCType);
+	FOnInputMappingChanged OnInputMappingChangedEvent;
+
 protected:
+	virtual void OnUnregister() override;
+
 	// Move
 	void Input_Move(const FInputActionValue& InputActionValue);
 	void Input_Look_Mouse(const FInputActionValue& InputActionValue);
@@ -81,6 +87,12 @@ protected:
 	void Input_UI_Inventory(const FInputActionValue& InputActionValue);
 	void Input_UI_Status(const FInputActionValue& InputActionValue);
 
+	// Flight
+	void Input_Skil_Flight_Begin(const FInputActionValue& InputActionValue);
+	void Input_Skil_Flight_Up(const FInputActionValue& InputActionValue);
+	void Input_Skil_Flight_Down(const FInputActionValue& InputActionValue);
+	void Input_Skil_Flight_Dodge(const FInputActionValue& InputActionValue);
+	void Input_Skil_Flight_Boost(const FInputActionValue& InputActionValue);
 	
 	void SetSpeed(ESpeedType TargetwalkSpeed);
 
@@ -94,7 +106,7 @@ protected:
 	TObjectPtr<UDSInputComponent> DSInputComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Input")
-	TObjectPtr<UInputMappingContext> DefaultIMC;
+	TMap <EInputMappingContextType, UInputMappingContext*> InputMappingContexts;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Input")
 	TObjectPtr<UDSInputConfig> InputConfig;
@@ -115,4 +127,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ECrouchMode CurrentCrouchMode = ECrouchMode::None;
+
+	UPROPERTY(EditAnywhere)
+	uint8 bIsInventoryMode;
 };

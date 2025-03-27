@@ -21,3 +21,21 @@ EItemType IDSItem::ConvertToItemType(int32 ItemID)
 	
 	return ItemType;
 }
+
+EDataTableType IDSItem::ConvertToItemDataType(EItemType ItemType)
+{
+
+	switch (ItemType)
+	{
+	case EItemType::Vehicle:
+		return EDataTableType::ItemVehicleData;
+	case EItemType::Potion:
+		return EDataTableType::ItemPotionData;
+	case EItemType::Grenade:
+		return EDataTableType::ItemGrenadeData;
+	case EItemType::Accessory:
+		return EDataTableType::ItemAccessoryData;
+	}
+
+	return EDataTableType();
+}

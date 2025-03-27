@@ -6,23 +6,24 @@
 
 // Game
 #include "Character/DSCharacter.h"
+#include "DSLogChannels.h"
 #include "GameData/DSGameDataSubsystem.h"
 #include "GameData/Items/DSItemData.h"
 #include "Item/DSItem.h"
 #include "Item/DSItemAccessory.h"
+#include "Item/DSItemActor.h"
 #include "Item/DSItemGrenade.h"
 #include "Item/DSItemPotion.h"
 #include "Item/DSItemVehicle.h"
 #include "Player/DSPlayerController.h"
 #include "Player/DSPlayerState.h"
 #include "System/DSEnums.h"
-#include "DSLogChannels.h"
+#include "System/DSEventSystems.h"
 
 UDSInventoryComponent::UDSInventoryComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PersonalInventory()
 {
-
 }
 
 void UDSInventoryComponent::UseItem(int32 ItemID)
@@ -32,10 +33,12 @@ void UDSInventoryComponent::UseItem(int32 ItemID)
 		return;
 	}
 
-	PersonalInventory[ItemID] -= 1; //한개 사용
-
+	if (GetNetMode() != ENetMode::NM_ListenServer)
+	{
+		//서버의 경우 위에서 사용했기 때문에 제거하지 않는다. 안그러면 이중으로 제거되는 문제가 있다.
+		PersonalInventory[ItemID] -= 1; //한개 사용
+	}
 	//이펙트 사용
-
 	ServerRPC_UseItem(ItemID, PersonalInventory[ItemID]);
 }
 
@@ -54,15 +57,18 @@ void UDSInventoryComponent::ServerRPC_UseItem_Implementation(int32 ItemID, int C
 	check(World);
 
 	//클라이언트에서는 이미 하나 사용함
-	if ((PersonalInventory[ItemID] - 1) != ClientItemCount)
+	if (GetNetMode() != ENetMode::NM_ListenServer)
 	{
-		//이때도 Rollback 하고, 사용하지 않음.
-		ClientRPC_RollbackItems(ItemID, PersonalInventory[ItemID]);
-		return;
+		if (PersonalInventory[ItemID] - 1 != ClientItemCount)
+		{
+			//이때도 Rollback 하고, 사용하지 않음.
+			ClientRPC_RollbackItems(ItemID, PersonalInventory[ItemID]);
+			return;
+		}
 	}
 
 	PersonalInventory[ItemID] -= 1; //한개 사용
-
+	
 	OnItemUsed(ItemID);
 
 	APlayerController* LocalPlayertController = GetController<APlayerController>();
@@ -94,8 +100,6 @@ void UDSInventoryComponent::OnItemUsed(int32 ItemID)
 
 	EItemType ItemType = IDSItem::ConvertToItemType(ItemID);
 
-	DS_LOG(DSItemLog, Warning, TEXT("ItemType %s"),*UEnum::GetValueAsString(ItemType));
-
 	//ConvertToItemType에 의해
 	FTableRowBase* ItemData = nullptr;
 
@@ -105,19 +109,19 @@ void UDSInventoryComponent::OnItemUsed(int32 ItemID)
 	switch (ItemType)
 	{
 	case EItemType::Accessory:
-		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemAccessoryData, ItemID);
+		ItemData = DataSubsystem->GetDataRowByID(EDataTableType::ItemAccessoryData, ItemID);
 		SelectedItem = NewObject<UDSItemAccessory>();
 		break;
 	case EItemType::Grenade:
-		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemGrenadeData, ItemID);
+		ItemData = DataSubsystem->GetDataRowByID(EDataTableType::ItemGrenadeData, ItemID);
 		SelectedItem = NewObject<UDSItemGrenade>();
 		break;
 	case EItemType::Potion:
-		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemPotionData, ItemID);
+		ItemData = DataSubsystem->GetDataRowByID(EDataTableType::ItemPotionData, ItemID);
 		SelectedItem = NewObject<UDSItemPotion>();
 		break;
 	case EItemType::Vehicle:
-		ItemData = DataSubsystem->GetDataRow(EDataTableType::ItemVehicleData, ItemID);
+		ItemData = DataSubsystem->GetDataRowByID(EDataTableType::ItemVehicleData, ItemID);
 		SelectedItem = NewObject<UDSItemVehicle>();
 		break;
 	}
@@ -127,17 +131,12 @@ void UDSInventoryComponent::OnItemUsed(int32 ItemID)
 		//데이터 초기화
 		SelectedItem->Initialize(ItemData);
 
-		ADSPlayerState* PS = Cast<ADSPlayerState>(GetOwner());
+		ADSCharacterBase* Character = Cast<ADSCharacterBase>(GetOwner());
 
-		if (IsValid(PS))
+		if (IsValid(Character))
 		{
-			ADSCharacterBase* Character = PS->GetPawn<ADSCharacterBase>();
-
-			if (IsValid(Character))
-			{
 				//실제 Stat 적용 로직
-				SelectedItem->UseItem(Character->GetStatComponent());
-			}
+			SelectedItem->UseItem(Character->GetStatComponent());
 		}
 		
 		DS_LOG(DSItemLog, Warning, TEXT("ItemID is valid"));
@@ -148,9 +147,29 @@ void UDSInventoryComponent::OnItemUsed(int32 ItemID)
 	}
 }
 
-void UDSInventoryComponent::StoreItems(int32 ItemID, int32 Count)
+void UDSInventoryComponent::PrintItem()
 {
-	if (PersonalInventory.Contains(ItemID) == false)
+	for (const auto& Item : PersonalInventory)
+	{
+		if (IsValid(GEngine))
+		{
+			FString Msg = FString::Printf(TEXT("ItemID %d Cnt = %d"),Item.Key, Item.Value);
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, Msg);
+		}
+	}
+}
+
+void UDSInventoryComponent::StoreItems(ADSItemActor* ItemActor,int32 ID, int32 Count)
+{
+
+	int32 ItemID = ID;
+
+	if (IsValid(ItemActor))
+	{
+		ItemID = ItemActor->GetID();
+	}
+
+	if (!PersonalInventory.Contains(ItemID))
 	{
 		PersonalInventory.Add(ItemID, Count);
 	}
@@ -159,25 +178,59 @@ void UDSInventoryComponent::StoreItems(int32 ItemID, int32 Count)
 		PersonalInventory[ItemID] += Count;
 	}
 
-	ServerRPC_StoreItems(ItemID, Count, PersonalInventory[ItemID]);
+	DS_LOG(DSItemLog, Log, TEXT("Client ItemID %d ItemCount %d"), ItemID, PersonalInventory[ItemID]);
+
+	// 🔹 리슨 서버에서는 별도의 RPC 호출 없이 로컬에서 처리
+	if (GetOwner()->HasAuthority())
+	{
+		if (IsValid(ItemActor))
+		{
+			ItemActor->SetLifeSpan(0.3f);
+		}
+		return;
+	}
+
+	ServerRPC_StoreItems(ItemActor, ID, Count, PersonalInventory[ItemID]);
 }
 
-bool UDSInventoryComponent::ServerRPC_StoreItems_Validate(int32 ItemID, int Count, int ClientItemCount)
+bool UDSInventoryComponent::ServerRPC_StoreItems_Validate(ADSItemActor* ItemActor, int32 ID, int32 Count, int32 ClientItemCount)
 {
-	if (PersonalInventory.Contains(ItemID))
+
+	int32 ItemID = ID;
+
+	if (IsValid(ItemActor))
 	{
-		if ((PersonalInventory[ItemID] + Count) != ClientItemCount)
+		ItemID = ItemActor->GetID();
+	}
+
+	if (GetNetMode() != ENetMode::NM_ListenServer)
+	{
+		//클라이언트만 검사한다. 서버는 항상 참이다.
+		if (PersonalInventory.Contains(ItemID))
 		{
-			ClientRPC_RollbackItems(ItemID, PersonalInventory[ItemID] + Count);
+			if ((PersonalInventory[ItemID] + Count) != ClientItemCount)
+			{
+				ClientRPC_RollbackItems(ItemID, PersonalInventory[ItemID] + Count);
+			}
 		}
 	}
 
 	return true;
 }
 
-void UDSInventoryComponent::ServerRPC_StoreItems_Implementation(int32 ItemID, int Count, int ClientItemCount)
+void UDSInventoryComponent::ServerRPC_StoreItems_Implementation(ADSItemActor* ItemActor, int32 ID, int32 Count, int32 ClientItemCount)
 {
-	if (PersonalInventory.Contains(ItemID) == false)
+
+	int32 ItemID = ID;
+
+	if (IsValid(ItemActor))
+	{
+		ItemID = ItemActor->GetID();
+	}
+
+
+	// 전용 서버에서도 아이템을 저장하도록 수정
+	if (!PersonalInventory.Contains(ItemID))
 	{
 		PersonalInventory.Add(ItemID, Count);
 	}
@@ -185,9 +238,21 @@ void UDSInventoryComponent::ServerRPC_StoreItems_Implementation(int32 ItemID, in
 	{
 		PersonalInventory[ItemID] += Count;
 	}
+
+	// 클라이언트와 서버의 아이템 개수가 맞지 않을 경우 로그 출력
+	if (ClientItemCount != PersonalInventory[ItemID])
+	{
+		DS_LOG(DSItemLog, Warning, TEXT("[Desync] ClientItemCount(%d) != ServerItemCount(%d) for ItemID(%d)"),
+			ClientItemCount, PersonalInventory[ItemID], ItemID);
+	}
+
+	if (IsValid(ItemActor))
+	{
+		ItemActor->SetLifeSpan(0.3f);
+	}
 }
 
-void UDSInventoryComponent::ClientRPC_RollbackItems_Implementation(int32 ItemID, int Count)
+void UDSInventoryComponent::ClientRPC_RollbackItems_Implementation(int32 ItemID, int32 Count)
 {
 	if (PersonalInventory.Contains(ItemID))
 	{

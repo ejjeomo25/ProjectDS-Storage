@@ -3,6 +3,27 @@
 #include "CoreMinimal.h"
 
 UENUM(BlueprintType)
+enum class EFlightState : uint8
+{
+	None,
+	Begin,
+	Idle,
+	Hovering,
+	Boost,
+	Up,
+	Down,
+	End,
+	Dodge
+};
+
+UENUM(BlueprintType)
+enum class EInputMappingContextType : uint8
+{
+	DefaultIMC,
+	FlightIMC,
+};
+
+UENUM(BlueprintType)
 enum class ECharacterType : uint8
 {
     Girl,
@@ -21,6 +42,8 @@ enum class EDataTableType : uint8
 	ItemPotionData,
 	ItemGrenadeData,
 	ItemAccessoryData,
+	DungeonData,
+	WeaponData,
 };
 // 몬스터 타입을 정의한다.
 UENUM()
@@ -34,14 +57,16 @@ enum class EMonsterType : int32
 };
 
 // 던전 타입
-UENUM(BlueprintType)
-enum class EDungeonType : uint8
+UENUM()
+enum class EDungeonType : int32
 {
-	DungeonDoor1,
-	DungeonDoor2,
-	DungeonDoor3,
-	DungeonDoor4,
-	DungeonDoor5
+	None = 0,
+	Dreamy = 100,
+	Mars = 200,
+	Panopticon = 300,
+	Cute = 400,
+	DungeonDoor5 = 500,
+	Max = 600
 };
 
 /*
@@ -68,6 +93,8 @@ enum class ESkillType : uint8
 	MouseLSkill, 			//MouseLSkill,
 	MouseLHoldSkill, 		//MouseLHoldSkill,
 	MouseRSkill,			//MouseRSkill,
+
+	FlightSkill,			// FlightSkill,
 };
 
 /**
@@ -171,7 +198,8 @@ enum class EItemType
 	Potion = 200,
 	Grenade = 300,
 	Accessory = 400,
-	Max = 500,
+	Chest = 500,
+	Max = 600,
 };
 
 /**
@@ -271,4 +299,26 @@ enum class ESpawnerType : uint8
 	RangeItem,
 	FixedItem,
 	RangeMonster,
+};
+
+
+/**
+ * @brief 인터랙트 종류
+ */
+UENUM(BlueprintType)
+enum class EInteractType : uint8
+{
+	PickupItem,		// 아이템을 줍는다.
+	SelectedItem,	// UI를 사용해서 아이템 리스트를 보여준다.
+};
+
+/**
+ * @brief 무기의 종류
+ */
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	None,
+	Gun,
+	Sword
 };

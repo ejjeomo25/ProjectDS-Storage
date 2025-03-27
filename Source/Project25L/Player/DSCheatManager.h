@@ -69,8 +69,16 @@ public:
 	*  @param ItemID	아이템 아이디 (DT_Item 테이블에 위치)
 	*  @param ItemCount 아이템 개수 
 	*/
+	
+	UFUNCTION(Exec, BlueprintAuthorityOnly)
+	void StoreItems(int32 PlayerID, int32 ItemID, int32 ItemCount);
+
 	UFUNCTION(Exec, BlueprintAuthorityOnly)
 	void UseItems(int32 PlayerID, int32 ItemID, int32 ItemCount);
+	
+	
+	UFUNCTION(Exec, BlueprintAuthorityOnly)
+	void PrintPlayerItems(int32 PlayerID);
 	
 	UFUNCTION(Exec)
 	void ApplyBuff(EDSStatType InStatType, EOperationType InOperationType, float InBuffValue, float InDuration);

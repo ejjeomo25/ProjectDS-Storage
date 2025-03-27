@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 // Defualt
 #include "CoreMinimal.h"
@@ -24,23 +24,30 @@ public:
 
 protected:
 
-	virtual FVector CalculateRandomPosition();
-
 	virtual void BeginPlay() override;
 
+protected:
+	virtual FVector CalculateRandomPosition();
+
 	void SpawnActors();
+	// 고정된 범위내에서 아이템을 스폰
+	void SpawnInFixedRange();
+	// 고정된 위치에 아이템 스폰
+	void SpawnAtFixedLocation();
 
 protected:
-	UPROPERTY(EditAnywhere, Category = Count)
+	UPROPERTY(EditAnywhere, Category = Spawner)
 	int32 SpawnMax;
 
-	UPROPERTY(EditAnywhere, Category = Count)
+	UPROPERTY(EditAnywhere, Category = Spawner)
 	int32 SpawnMin;
 
-	UPROPERTY(EditAnywhere, Category = ItemSpawnerType)
+	UPROPERTY(EditAnywhere, Category = Spawner)
 	ESpawnerType SpawnerType;
 
-	UPROPERTY(EditAnywhere, Category = MonsterType)
+	UPROPERTY(EditAnywhere, Category = Spawner)
 	TArray<int32> SpawnIDs;
 
+	UPROPERTY(EditInstanceOnly, Category = Spawner )
+	int32 SpawnGiftID;
 };

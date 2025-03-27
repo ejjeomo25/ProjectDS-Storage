@@ -19,7 +19,7 @@ ADSPlayerController::ADSPlayerController()
 #endif
 }
 
-void ADSPlayerController::PlayDoorTransition()
+void ADSPlayerController::ShowUI()
 {
 	//클라이언트에서만 실행되어진다.
 	ADSHUD* HUD = GetHUD<ADSHUD>();
@@ -29,6 +29,24 @@ void ADSPlayerController::PlayDoorTransition()
 		HUD->SetVisibilityWidget(EWidgetType::HUBMainWidget, true);
 	}
 }
+
+void ADSPlayerController::SetUIFocusMode()
+{
+	bShowMouseCursor = true;
+
+	FInputModeGameAndUI InputMode;
+	SetInputMode(InputMode);
+}
+
+void ADSPlayerController::SetGameFocusMode()
+{
+	bShowMouseCursor = false;
+
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
+}
+
+
 
 void ADSPlayerController::ServerRPC_Cheat_Implementation(const FString& Message)
 {
@@ -64,13 +82,21 @@ void ADSPlayerController::ServerRPC_CheatAll_Implementation(const FString& Messa
 void ADSPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	DSPlayerInputComponent->SetupInputComponent(InputComponent);
+	
+	if(IsLocalController())
+	{
+		DSPlayerInputComponent->SetupInputComponent(InputComponent);
+	}
+
 }
 
 void ADSPlayerController::OnPossess(APawn* aPawn)
 {
 	Super::OnPossess(aPawn);
 
-	DSPlayerInputComponent->InitialCharacterSetting();
+	if (IsLocalController())
+	{
+		DSPlayerInputComponent->InitialCharacterSetting();
+	}
 }
 

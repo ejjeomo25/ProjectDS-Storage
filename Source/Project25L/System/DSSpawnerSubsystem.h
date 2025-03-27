@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -50,7 +50,7 @@ public:
 	* 생성할 아이템 개수 Min - Max 값을 전달하면 랜덤으로 개수를 생성한다.
 	* 정규 분포식을 사용해서 나온 아이템 개수와 아이템 아이디를 리턴하는 함수
 	*/
-	TMap<int32, int32> SelectChestItems(TArray<int32>& ItemIDs, int32 MaxRange, int32 MinRange, FVector& Location, TWeakObjectPtr<AActor> ItemActor);
+	TMap<int32, int32> SelectChestItems(TArray<int32>& ItemIDs, int32 MaxRange, int32 MinRange, FVector& Location);
 	
 	AActor* CreateActor(ESpawnerType SpawnType, int32 SpawnID, FVector& Location);
 

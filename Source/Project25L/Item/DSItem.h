@@ -29,4 +29,6 @@ public:
 	virtual void UseItem(const UDSStatComponent* Stat) = 0;
 	virtual void Initialize(FTableRowBase* DataTableRow) = 0;
 	static EItemType ConvertToItemType(int32 ItemType);
+
+	static EDataTableType ConvertToItemDataType(EItemType ItemType);
 };

@@ -1,4 +1,4 @@
-//Default
+﻿//Default
 #include "Character/DSCharacterMovementComponent.h"
 
 //UE
@@ -43,7 +43,7 @@ void UDSCharacterMovementComponent::OnMovementUpdated(float DeltaSeconds, const 
 
 float UDSCharacterMovementComponent::GetMaxSpeed() const
 {
-	if (SpeedMode.Num() == 0)
+	if (SpeedMode.Num() < 4)
 	{
 		return Super::GetMaxSpeed();
 	}

@@ -35,12 +35,12 @@ public:
     virtual UDSSkillControlComponent* GetSkillControlComponent() const PURE_VIRTUAL(IDSSkillLifeCycle::GetSkillControlComponent, return nullptr;);
 
     /** 스킬 초기화 시 호출 */
-    virtual void OnSkillInitialized(UDSSkillBase & Skill) {}
+    virtual void OnSkillInitialized() {}
 
     /** 스킬 활성화 시 호출 */
-    virtual void OnSkillActivated(UDSSkillBase & Skill) {}
+    virtual void OnSkillActivated() {}
 
     /** 스킬 비활성화 시 호출 */
-    virtual void OnSkillDeactivated(UDSSkillBase & Skill) {}
+    virtual void OnSkillDeactivated() {}
 
 };

@@ -1,4 +1,4 @@
-﻿
+
 #pragma once
 // Default
 #include "CoreMinimal.h"
@@ -8,6 +8,7 @@
 #include "UObject/ObjectMacros.h"
 
 // Game
+#include "GameData/Items/DSItemData.h"
 #include "System/DSEnums.h"
 
 // UHT
@@ -45,14 +46,13 @@ public:
 
 struct DSGameUI
 {
-
+	DECLARE_MULTICAST_DELEGATE(FOnInventoryToggle);
+	FOnInventoryToggle OnInventoryToggle;
 };
 
 struct DSGameEvent
 {
-	//임시 예시
 	DECLARE_MULTICAST_DELEGATE(DS_DELEGATE);
-	DS_DELEGATE OnDs_delegate;
 	DS_DELEGATE OnAllAssetsLoaded;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnGimmickStateChanged, bool);
@@ -62,22 +62,19 @@ struct DSGameEvent
 	FOnDungeonStageChanged OnUnlockStage;
 	FOnDungeonStageChanged OnDestroyStage;
 
+
+	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, int32, int32);
+	FOnItemPickedUp OnItemPickedUp;
+
 	DECLARE_MULTICAST_DELEGATE_OneParam(DS_ONE_FLOAT_DELEGATE, float);
 	DS_ONE_FLOAT_DELEGATE OnHPChanged;
+
+
 
 };
 
 struct DSSkillInputEvent
 {
-	DSSkillInputEvent()
-	{
-		// OnSkillPressedEvents.Add(ESkillType::MouseLSkill, FOnSkillPressed());
-		// OnSkillPressedEvents.Add(ESkillType::MouseRSkill, FOnSkillPressed());
-		// OnSkillPressedEvents.Add(ESkillType::QSkill, FOnSkillPressed());
-		// OnSkillPressedEvents.Add(ESkillType::XSkill, FOnSkillPressed());
-		// OnSkillPressedEvents.Add(ESkillType::ESKill, FOnSkillPressed());
-		// OnSkillPressedEvents.Add(ESkillType::RSkill, FOnSkillPressed());
-	}
 	// Input
 	DECLARE_MULTICAST_DELEGATE(FOnWeaponToggle);
 	FOnWeaponToggle OnWeaponToggle;
@@ -93,10 +90,6 @@ struct DSSkillInputEvent
 
 	DECLARE_MULTICAST_DELEGATE(FOnWeaponSecondaryAction);
 	FOnWeaponSecondaryAction OnWeaponSecondaryAction;
-
-	// Skill
-	// DECLARE_MULTICAST_DELEGATE(FOnSkillPressed);
-	// TMap< ESkillType, FOnSkillPressed> OnSkillPressedEvents;
 };
 
 // 전역 객체 선언

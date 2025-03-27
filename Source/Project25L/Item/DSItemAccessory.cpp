@@ -4,7 +4,7 @@
 
 // Game
 #include "DSLogChannels.h"
-#include "GameData/Items/DSItemAccessoryData.h"
+#include "GameData/Items/DSItemStatData.h"
 
 UDSItemAccessory::UDSItemAccessory()
 	: Super()
@@ -14,11 +14,11 @@ UDSItemAccessory::UDSItemAccessory()
 
 void UDSItemAccessory::Initialize(FTableRowBase* DataTableRow)
 {
-	FDSItemAccessoryData* ItemData = static_cast<FDSItemAccessoryData*>(DataTableRow);
+	FDSItemStatData* ItemData = static_cast<FDSItemStatData*>(DataTableRow);
 
 	if (nullptr != ItemData)
 	{
-		Duration = ItemData->Duration;
+	
 	}
 }
 

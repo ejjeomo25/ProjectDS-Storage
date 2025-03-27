@@ -1,9 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
+// Default
 #include "CoreMinimal.h"
+
+// UE
 #include "../DSPrimaryDataAsset.h"
+
+// UHT
 #include "DSSkillDefinition.generated.h"
 
 /**

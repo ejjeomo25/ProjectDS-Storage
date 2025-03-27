@@ -2,7 +2,7 @@
 #include "Item/DSItemVehicle.h"
 // Game
 #include "DSLogChannels.h"
-#include "GameData/Items/DSItemVehicleData.h"
+#include "GameData/Items/DSItemStatData.h"
 
 UDSItemVehicle::UDSItemVehicle()
 	: Super()
@@ -23,14 +23,10 @@ void UDSItemVehicle::UseItem(const UDSStatComponent* Stat)
 
 void UDSItemVehicle::Initialize(FTableRowBase* DataTableRow)
 {
-	FDSItemVehicleData* ItemData = static_cast<FDSItemVehicleData*>(DataTableRow);
+	FDSItemStatData* ItemData = static_cast<FDSItemStatData*>(DataTableRow);
 
 	if (nullptr != ItemData)
 	{
-		Duration = ItemData->Duration;
-		WalkSpeed = ItemData->WalkSpeed;
-		RunSpeed = ItemData->RunSpeed;
-		JumpHeight = ItemData->JumpHeight;
-		bCanFly = ItemData->bCanFly;
+
 	}
 }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -7,6 +7,9 @@
 
 //UHT
 #include "DSGameInstance.generated.h"
+
+class UDSGameUtils;
+class UDSEventSystems;
 
 UCLASS()
 class PROJECT25L_API UDSGameInstance : public UGameInstance
@@ -18,5 +21,8 @@ public:
 
 public:
 	UPROPERTY()
-	TObjectPtr<class UDSEventSystems> EventSystem;
+	TObjectPtr<UDSEventSystems> EventSystem;
+
+	UPROPERTY()
+	TObjectPtr<UDSGameUtils> GameUtils;
 };

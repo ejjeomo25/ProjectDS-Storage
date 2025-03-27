@@ -198,13 +198,13 @@ protected:
 	virtual UDSSkillControlComponent* GetSkillControlComponent() const override;
 
 	/** 스킬 초기화 시 호출 */
-	virtual void OnSkillInitialized(UDSSkillBase& Skill) override;
+	virtual void OnSkillInitialized() override;
 
 	/** 스킬 활성화 시 호출 */
-	virtual void OnSkillActivated(UDSSkillBase& Skill) override;
+	virtual void OnSkillActivated() override;
 
 	/** 스킬 비활성화 시 호출 */
-	virtual void OnSkillDeactivated(UDSSkillBase& Skill) override;
+	virtual void OnSkillDeactivated() override;
 
 private:
 	// --------------------------------------

@@ -1,4 +1,4 @@
-﻿// Default
+// Default
 #include "System/DSRoomSubsystem.h"
 
 // UE
@@ -8,7 +8,7 @@
 #include "System/DSGameInstance.h"
 
 UDSRoomSubsystem::UDSRoomSubsystem()
-	: CurrentStage(EDungeonType::DungeonDoor2)
+	: CurrentStage(EDungeonType::Mars)
 {
 }
 
