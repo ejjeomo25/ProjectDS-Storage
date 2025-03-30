@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
 
 // UE
 #include "GameFramework/Actor.h"
+#include "GameplayTagContainer.h"
 
 // Game
 #include "System/DSEnums.h"
@@ -67,4 +68,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Collision)
 	TObjectPtr<UBoxComponent> Trigger;
+
+	UPROPERTY(EditAnywhere, Category = "Settings|Tag")
+	FGameplayTag ReadyPlayerWidgetTag;
 };

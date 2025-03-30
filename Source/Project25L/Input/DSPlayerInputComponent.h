@@ -19,6 +19,7 @@ class UInputMappingContext;
 class UDSInputConfig;
 class ADSPlayerController;
 class UDSInputComponent;
+class UDSFlightComponent;
 
 /** UDSPlayerInputComponent
  *
@@ -83,13 +84,16 @@ protected:
 	void Input_Weapon_PrimaryAction_Released(const FInputActionValue& InputActionValue);
 	void Input_Weapon_SecondaryAction(const FInputActionValue& InputActionValue);
 
+	void Input_Equipment_Toggle();
+
 	// UI
 	void Input_UI_Inventory(const FInputActionValue& InputActionValue);
 	void Input_UI_Status(const FInputActionValue& InputActionValue);
 
 	// Flight
 	void Input_Skil_Flight_Begin(const FInputActionValue& InputActionValue);
-	void Input_Skil_Flight_Up(const FInputActionValue& InputActionValue);
+	void Input_Skil_Flight_Up(const FInputActionValue& InputActionValue); 
+	void Input_Skill_Flight_Released(const FInputActionValue& InputActionValue);
 	void Input_Skil_Flight_Down(const FInputActionValue& InputActionValue);
 	void Input_Skil_Flight_Dodge(const FInputActionValue& InputActionValue);
 	void Input_Skil_Flight_Boost(const FInputActionValue& InputActionValue);
@@ -98,6 +102,10 @@ protected:
 
 	ESpeedType CalculateSpeed();
 
+	void DefaultAttack();
+	UDSFlightComponent* GetFlightComponent() const;
+
+protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Input")
 	ESpeedType CurrentSpeedType;
@@ -120,10 +128,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
 	float MouseSensitivity = 1.0f;
 
+	UPROPERTY(Transient)
 	float PressedTime = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Mouse")
-	float HoldTime = 0.3f;
+	UPROPERTY(Transient)
+	float HoldTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ECrouchMode CurrentCrouchMode = ECrouchMode::None;

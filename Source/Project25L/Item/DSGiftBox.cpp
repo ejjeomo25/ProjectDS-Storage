@@ -63,7 +63,7 @@ void ADSGiftBox::OnComponentBeginOverlap_Child(UPrimitiveComponent* OverlappedCo
 		UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
 		check(UIManager);
 		
-		ItemListWidget = Cast<UDSItemList>(UIManager->PushContentToLayer(PlayerController, ListWidgetTag, ListWidget));
+		ItemListWidget = Cast<UDSItemList>(UIManager->PushContentToLayer(PlayerController, ListWidgetTag));
 
 		if (IsValid(ItemListWidget))
 		{

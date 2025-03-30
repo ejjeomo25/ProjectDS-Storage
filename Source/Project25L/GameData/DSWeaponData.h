@@ -12,7 +12,6 @@
 // UHT
 #include "DSWeaponData.generated.h"
 
-
 USTRUCT(BlueprintType)
 struct FDSWeaponData : public FTableRowBase
 {
@@ -20,12 +19,20 @@ struct FDSWeaponData : public FTableRowBase
 
 public:
 	FDSWeaponData() :
-		Weapon(nullptr)
+		EquipMontage(nullptr)
+		, UnEquipMontage(nullptr)
+		, Weapon(nullptr)
 		, InputThreshold(0.f)
 		, BulletCount(0)
 		, BulletSpread(0.f)
 		, SpreadCoef(0.f)
 	{ }
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	TSoftObjectPtr<UAnimMontage> EquipMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	TSoftObjectPtr<UAnimMontage> UnEquipMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
 	TSoftClassPtr<ADSWeapon> Weapon;

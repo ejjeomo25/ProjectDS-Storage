@@ -10,15 +10,11 @@
 #include "UI/DSWidgetLayer.h"
 #include "System/DSGameInstance.h"
 #include "Player/DSPlayerController.h"
+#include "UI/DSPrimaryLayout.h"
 
 UDSUIManagerSubsystem::UDSUIManagerSubsystem():Super()
 {
-	// test -> 게임데이터 에셋으로 넣기 
-	FString WidgetPath = "/Game/UI/Item/WBP_ItemList.WBP_ItemList_C";
-	FSoftClassPath SoftClassPath(WidgetPath);
-	TSoftClassPtr<UUserWidget> WidgetPtr(SoftClassPath);
-	FGameplayTag LayerTag = FGameplayTag::RequestGameplayTag("UI.Layer.Modal");
-	WidgetMap.Add(LayerTag, WidgetPtr);
+	
 }
 
 UDSUIManagerSubsystem* UDSUIManagerSubsystem::Get(UObject* Object)
@@ -34,59 +30,50 @@ UDSUIManagerSubsystem* UDSUIManagerSubsystem::Get(UObject* Object)
 	return GameInstance->GetSubsystem<UDSUIManagerSubsystem>();
 }
 
-bool UDSUIManagerSubsystem::RegisterLayer(const APlayerController* PlayerController, FGameplayTag LayerName, UDSWidgetLayer* LayerWidget)
-{
-	if (!PlayerController) return false;
 
-	ADSHUD* HUD = Cast<ADSHUD>(PlayerController->GetHUD());
-	if (HUD)
-	{
-		return HUD->RegisterLayer(LayerName, LayerWidget);
-	}
 
-	return false;
-}
-
-UUserWidget* UDSUIManagerSubsystem::PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName, TSoftClassPtr<UUserWidget> WidgetClass)
+UUserWidget* UDSUIManagerSubsystem::PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName)
 {
 	
-	DS_LOG(DSUILog, Log, TEXT("UDSUIManagerSubsystem::PushContentToLayer"));
-	if (IsValid(PlayerController))
+	UUserWidget* NewWidget = PrimaryWidget->PushContentToLayer(LayerName);
+
+	if (NewWidget)
 	{
-		DS_LOG(DSUILog, Log, TEXT("UDSUIManagerSubsystem::PushContentToLayer :: PlayerController"));
-
-		AHUD* HUD = PlayerController->GetHUD();
-		if (IsValid(HUD))
-		{
-			DS_LOG(DSUILog, Log, TEXT("UDSUIManagerSubsystem::PushContentToLayer :: HUD"));
-
-			ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
-			return DSHUD->PushContentToLayer(LayerName, WidgetClass);
-		}
+		return NewWidget;
 	}
 	return nullptr;
 }
 
 void UDSUIManagerSubsystem::PopContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName)
 {
-	if (IsValid(PlayerController))
-	{
-		AHUD* HUD = PlayerController->GetHUD();
-		if (IsValid(HUD))
-		{
-			ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
-			DSHUD->PopContentfromLayer(LayerName);
-		}
-	}
+	// if (IsValid(PlayerController))
+	// {
+	// 	AHUD* HUD = PlayerController->GetHUD();
+	// 	if (IsValid(HUD))
+	// 	{
+	// 		ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
+	// 		if (LayersTop.Contains(LayerName))
+	// 		{
+	// 			UUserWidget* WidgetToPop = *LayersTop.Find(LayerName);
+	// 
+	// 			PrimaryWidget->PopContentfromLayer(LayerName);
+	// 
+	// 			LayersTop.Remove(LayerName);
+	// 
+	// 		}
+	// 	}
+	// }
+
+	PrimaryWidget->PopContentfromLayer(LayerName);
 }
 
 void UDSUIManagerSubsystem::ClearLayer(const APlayerController* PlayerController, FGameplayTag LayerName)
 {
-	AHUD* HUD = PlayerController->GetHUD();
-	if (IsValid(HUD))
+	// AHUD* HUD = PlayerController->GetHUD();
+	// if (IsValid(HUD))
 	{
-		ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
-		DSHUD->ClearLayer(LayerName);
+		// ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
+		PrimaryWidget->ClearLayer(LayerName);
 	}
 }
 
@@ -102,32 +89,13 @@ void UDSUIManagerSubsystem::FocusModal(APlayerController* PlayerController)
 	DSPlayerController->SetUIFocusMode();
 }
 
-UUserWidget* UDSUIManagerSubsystem::PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName)
+bool UDSUIManagerSubsystem::RegisterWidget(UDSPrimaryLayout* Widget)
 {
-	// if (!PlayerController)
-	// {
-	//     UE_LOG(LogTemp, Warning, TEXT("PushContentToLayer: PlayerController is nullptr!"));
-	//     return nullptr;
-	// }
-	// 
-	// FGameplayTag LayerTag = FGameplayTag::RequestGameplayTag(LayerName);
-	// 
-	// if (WidgetMap.Contains(LayerTag))
-	// {
-	//     // TSoftClassPtr<UUserWidget> 가져오기
-	//     TSoftClassPtr<UUserWidget> WidgetPtr = WidgetMap[LayerTag];
-	// 
-	//     // 클래스가 로드되어 있는지 확인
-	//     if (false == WidgetPtr.IsValid())
-	//     {
-	// 		UE_LOG(LogTemp, Warning, TEXT("PushContentToLayer: here!!!!"));
-	// 		return PushContentToLayer(PlayerController, LayerName, WidgetPtr.LoadSynchronous());
-	//     }
-	// 	else
-	// 	{
-	// 		return PushContentToLayer(PlayerController, LayerName, WidgetPtr.Get());
-	// 	}
-	// }
-	// 
-	return nullptr;
+	if (false == IsValid(PrimaryWidget) && IsValid(Widget))
+	{
+		PrimaryWidget = Widget;
+		return true;
+	}
+	return false;
 }
+

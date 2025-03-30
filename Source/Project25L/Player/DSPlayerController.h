@@ -1,9 +1,12 @@
-﻿#pragma once
+#pragma once
 //Default
 #include "CoreMinimal.h"
 
 //UE
 #include "GameFramework/PlayerController.h"
+
+// Game
+#include "System/DSEnums.h"
 
 //UHT
 #include "DSPlayerController.generated.h"
@@ -25,6 +28,7 @@ public:
 	void SetUIFocusMode();
 	void SetGameFocusMode();
 	
+	ECharacterType GetCharacterType() { return CharacterType; }
 
 public:
 	/*Cheat*/
@@ -33,13 +37,13 @@ public:
 
 	UFUNCTION(Server, Unreliable)
 	void ServerRPC_CheatAll(const FString& Message);
-	
-	class UDSPlayerInputComponent* GetPlayerInputComponent() const { return DSPlayerInputComponent; }
-
 protected:
-	virtual void SetupInputComponent() override;
 	virtual void OnPossess(APawn* aPawn) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UDSPlayerInputComponent> DSPlayerInputComponent;
+protected:
+	
+	/*현재 CharacterType은 블루프린트로 넣는 용도이지만, 추후에 선택에 의해 변경한 Transient 로 변경 예정*/
+	UPROPERTY(EditAnywhere, category = CharacterType)
+	ECharacterType CharacterType;
+
 };

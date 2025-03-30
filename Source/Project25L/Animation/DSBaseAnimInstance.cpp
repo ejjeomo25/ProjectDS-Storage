@@ -1,4 +1,4 @@
-﻿//Default
+//Default
 #include "Animation/DSBaseAnimInstance.h"
 
 //UE

@@ -23,6 +23,16 @@ public:
 	virtual void InitSkillActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override; 
 
 protected:
+	
+	/*Girl 스킬*/
+	void ActivatePrimarySKill();
+
+	// 가지고 있는 스킬 저장
+protected:
+
+	UPROPERTY(Transient)
+	TMap<ESkillType, FDSSkillSpecHandle> HasSkills;
+protected:
 	void ActivateComboSkill();
 	void ActivateFlightSkill();
 

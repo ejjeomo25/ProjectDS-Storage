@@ -29,7 +29,9 @@ public:
 	* @param[in] Angle 캐릭터 각도 (파밍 각도, 스킬 각도 등 각도는 달라질 수 있기 때문에 파라미터로 넘겨준다. 
 	* @return bool 시야 범위 내 있는지 결정하는 함수
 	*/
-	static bool IsWithinCharacterFOV(const ADSCharacter* Character,const AActor* Target, float AnchorAngle);
+	static bool IsWithinCharacterFOV(const ACharacter* Character,const AActor* Target, float AnchorAngle);
+	static int GetSpreadOffsetIdx();
+	static float GetSpreadOffset(int Idx);
 
 	/**
 	* @details PlayerController을 넘겼을 때 캐릭터를 리턴하는 함수
@@ -48,6 +50,8 @@ public:
 	* 
 	*/
 	static uint32 GenerateUniqueSkillID();
+
+	static void LoadSpreadOffset(FString Path, float SpreadCoef);
 
 private:
 	/**
@@ -83,5 +87,16 @@ private:
 	};
 
 	static FSkillIDGenerator& GetSkillIDGenerator();
+
+protected:
+
+	/*Offset 관련 함수*/
+	static void GenerateUniqueSpreadOffset(float SpreadCoef);
+	static FString ReadFromFile(FString FilePath, bool& bOutSuccess);
+	static void WriteToFile(FString FilePath, FString String, bool& bOutSuccess);
+
+protected:
+
+	static TArray<float> SpreadOffsets;
 
 };

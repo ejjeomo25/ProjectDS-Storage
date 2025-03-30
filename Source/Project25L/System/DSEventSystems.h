@@ -1,4 +1,4 @@
-
+﻿
 #pragma once
 // Default
 #include "CoreMinimal.h"
@@ -27,10 +27,13 @@
 	}														\
 }
 													
-#define DSEVENT_DELEGATE_REMOVE(EventName, Object)			\
-{															\
-	EventName.RemoveAll(Object);							\
-}															\
+#define DSEVENT_DELEGATE_REMOVE(EventName, Object)          \
+{                                                           \
+    if ((EventName).IsBoundToObject(Object))                \
+    {                                                       \
+        (EventName).RemoveAll(Object);                      \
+    }                                                       \
+}														\
 
 
 class UMaterialInterface;

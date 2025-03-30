@@ -1,4 +1,4 @@
-﻿//Default
+//Default
 #include "Character/DSCharacterBase.h"
 
 //UE
@@ -47,13 +47,6 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 		GetMesh()->SetSkeletalMesh(SkeletalMeshRef.Object);
 	}
 
-	//Default AnimInstance
-	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Characters/Mannequins/Animations/ABP_Manny.ABP_Manny_C"));
-
-	if (AnimInstanceRef.Class)
-	{
-		GetMesh()->SetAnimClass(AnimInstanceRef.Class);
-	}
 	/*데이터 테이블로 변환 예정*/
 
 	// SkillControlComponent = CreateDefaultSubobject<UDSSkillControlComponent>(TEXT("SkillControlComponent"));

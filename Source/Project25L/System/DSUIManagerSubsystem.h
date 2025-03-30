@@ -15,6 +15,7 @@
 
  class UDSWidgetLayer;
  class DSPlayerController;
+ class UDSPrimaryLayout;
 
 UCLASS()
 class PROJECT25L_API UDSUIManagerSubsystem : public UGameInstanceSubsystem
@@ -25,14 +26,17 @@ public:
 
 	static UDSUIManagerSubsystem* Get(UObject* Object);
 
-	bool RegisterLayer(const APlayerController* PlayerController, FGameplayTag LayerName, UDSWidgetLayer* LayerWidgett);
-	UUserWidget* PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName, TSoftClassPtr<UUserWidget> WidgetClass);
+	UUserWidget* PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName);
 	void PopContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName);
 	void ClearLayer(const APlayerController* PlayerController, FGameplayTag LayerName);
 	void FocusGame(APlayerController* PlayerController);
 	void FocusModal(APlayerController* PlayerController);
-	UUserWidget* PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName);
+
+	bool RegisterWidget(UDSPrimaryLayout *Widget);
 
 	UPROPERTY(EditAnywhere, Category = "Config")
-	TMap<FGameplayTag, TSoftClassPtr<UUserWidget>> WidgetMap;
+	TMap<FGameplayTag, UUserWidget*> LayersTop;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
+	TObjectPtr<UDSPrimaryLayout> PrimaryWidget;
 };

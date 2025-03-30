@@ -1,4 +1,4 @@
-﻿// Default
+// Default
 #include "GameData/DSGameDataSubsystem.h"
 
 // UE
@@ -85,6 +85,20 @@ UDSGameDataSubsystem* UDSGameDataSubsystem::Get(UObject* WorldContextObject)
 	check(GameInstance);
 
 	return GameInstance->GetSubsystem<UDSGameDataSubsystem>();
+}
+
+EDataTableType UDSGameDataSubsystem::ConvertToDataTableType(ECharacterType CharacterType)
+{
+	switch(CharacterType)
+	{
+	case ECharacterType::Girl:
+		return EDataTableType::GirlSkillAttributeData;
+	case ECharacterType::Boy:
+		return EDataTableType::BoySkillAttributeData;
+	case ECharacterType::Mister:
+		return EDataTableType::MisterSkillAttributeData;
+	}
+	return EDataTableType();
 }
 
 FTableRowBase* UDSGameDataSubsystem::GetDataRowByID(EDataTableType DataTableType, int32 DataID)

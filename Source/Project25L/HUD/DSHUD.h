@@ -8,7 +8,6 @@
 
 // Game
 #include "System/DSEnums.h"
-#include "GameplayTagContainer.h"
 
 
 // UHT
@@ -19,17 +18,6 @@ class UDSWidgetLayer;
 class UDSPrimaryLayout;
 
 
- USTRUCT(BlueprintType)
- struct FDSWidgetStruct
- {
-	 GENERATED_BODY()
-
-	 UPROPERTY(EditAnywhere)
-	 TSubclassOf<UUserWidget> Widget;
-
-	 UPROPERTY(EditAnywhere)
-	 FGameplayTag Tag;
- };
 
 
 UCLASS()
@@ -47,41 +35,20 @@ public:
 
 	void PushInitialScreens();
 
-	// UI Manager
-	UFUNCTION(BlueprintCallable, Category = "Widgets")
-	UUserWidget* PushContentToLayer(FGameplayTag LayerName, TSoftClassPtr<UUserWidget> SoftWidgetClass);
-
-	UFUNCTION(BlueprintCallable, Category = "Widgets")
-	void PopContentfromLayer(FGameplayTag LayerName);
-
-	UFUNCTION(BlueprintCallable, Category = "Widgets")
-	bool RegisterLayer(FGameplayTag LayerName, UDSWidgetLayer* LayerWidget);
-
-	UFUNCTION(BlueprintCallable, Category = "Widgets")
-	void ClearLayer(FGameplayTag LayerName);
-
 protected:
 
-	UPROPERTY(Transient)
-	TMap<EWidgetType, TObjectPtr<UUserWidget>> Widgets;
+	// 레이어 저장되어 있는 맵
+	// UPROPERTY(EditDefaultsOnly, Category = "Widgets")
+	// TMap<FGameplayTag, TSoftClassPtr<UDSWidgetLayer>> LayersMap;
 
-	UPROPERTY(EditAnywhere, Category = Widgets)
-	TMap<EWidgetType, TSubclassOf<UUserWidget>> WidgetClasses;
+	// 아이템 리스트 f 연속 눌렀을때 계속 둘어가서 확인용으로 넣었던 것
+	// UPROPERTY()
+	// TMap<FGameplayTag, UDSWidgetLayer*> UseLayersMap;
 
-	//UI Stack
-	UPROPERTY(EditAnywhere, Category = "Widgets")
-	TArray<FGameplayTag> WidgetTagArray;
-
-	UPROPERTY()
-	TMap<FGameplayTag, UDSWidgetLayer*> LayersMap;
-
-	UPROPERTY()
-	TMap<FGameplayTag, UDSWidgetLayer*> UseLayersMap;
-
-	UPROPERTY(EditAnywhere, Category = "Config")
-	TMap<FGameplayTag, TSoftClassPtr<UUserWidget>> InitialScreens;
+	// UPROPERTY(EditAnywhere, Category = "Config")
+	// TMap<FGameplayTag, TSoftClassPtr<UUserWidget>> InitialScreens;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
-	TSoftClassPtr<UDSPrimaryLayout> PrimaryLayoutClass;
+	TSubclassOf<UDSPrimaryLayout> PrimaryLayoutClass;
 
 };

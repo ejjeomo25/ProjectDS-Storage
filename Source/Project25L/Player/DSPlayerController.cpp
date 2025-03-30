@@ -1,4 +1,4 @@
-﻿//Default
+//Default
 #include "Player/DSPlayerController.h"
 
 //UE
@@ -7,13 +7,10 @@
 //Game
 #include "DSLogChannels.h"
 #include "HUD/DSHUD.h"
-#include "Input/DSPlayerInputComponent.h"
 #include "Player/DSCheatManager.h"
 
 ADSPlayerController::ADSPlayerController()
 {
-	DSPlayerInputComponent = CreateDefaultSubobject<UDSPlayerInputComponent>(TEXT("DSPlayerInputComponent"));
-	
 #if USING_CHEAT_MANAGER
 	CheatClass = UDSCheatManager::StaticClass();
 #endif
@@ -79,24 +76,9 @@ void ADSPlayerController::ServerRPC_CheatAll_Implementation(const FString& Messa
 	}
 }
 
-void ADSPlayerController::SetupInputComponent()
-{
-	Super::SetupInputComponent();
-	
-	if(IsLocalController())
-	{
-		DSPlayerInputComponent->SetupInputComponent(InputComponent);
-	}
-
-}
 
 void ADSPlayerController::OnPossess(APawn* aPawn)
 {
 	Super::OnPossess(aPawn);
-
-	if (IsLocalController())
-	{
-		DSPlayerInputComponent->InitialCharacterSetting();
-	}
 }
 

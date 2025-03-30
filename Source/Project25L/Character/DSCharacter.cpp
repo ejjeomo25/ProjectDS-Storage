@@ -5,20 +5,28 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "GameplayTagContainer.h"
 
 //Game
-#include "DSCharacterMovementComponent.h"
+#include "System/DSEventSystems.h"
+#include "System/DSGameUtils.h"
+#include "System/DSUIManagerSubsystem.h"
 #include "DSLogChannels.h"
+
+#include "DSCharacterMovementComponent.h"
+#include "DSFlightComponent.h"
+#include "Input/DSPlayerInputComponent.h"
+
 #include "GameData/Items/DSItemData.h"
+
 #include "Inventory/DSInventoryComponent.h"
 #include "Item/DSGiftBox.h"
 #include "Item/DSItemActor.h"
 #include "Player/DSPlayerController.h"
+
 #include "Skill/DSSkillControlComponent.h"
 #include "Skill/DSTestSkill.h"
-#include "System/DSEventSystems.h"
-#include "System/DSGameUtils.h"
-#include "System/DSUIManagerSubsystem.h"
+
 #include "UI/HUB/DSReadyPlayersWidget.h"
 #include "HUD/DSHUD.h"
 
@@ -42,6 +50,8 @@ ADSCharacter::ADSCharacter(const FObjectInitializer& ObjectInitializer)
 	bIsShowGiftBox = false;
 
 	InventoryComponent = CreateDefaultSubobject<UDSInventoryComponent>(TEXT("InventoryComponent"));
+	DSPlayerInputComponent = CreateDefaultSubobject<UDSPlayerInputComponent>(TEXT("DSPlayerInputComponent"));
+	FlightComponent = CreateDefaultSubobject<UDSFlightComponent>(TEXT("FlightComponent"));
 
 	SetJumpHeight(false);
 }
@@ -67,7 +77,13 @@ float ADSCharacter::GetFOV()
 	return FOV;
 }
 
-void ADSCharacter::ServerRPC_ReadyPlayer_Implementation(int32 PlayerCount)
+float ADSCharacter::GetInputThreshold()
+{
+	//아저씨의 경우 알아서 정의해서 여기서 리턴.
+	return 0.0f;
+}
+
+void ADSCharacter::ServerRPC_ReadyPlayer_Implementation(int32 PlayerCount, FGameplayTag ReadyPlayerWidgetTag)
 {
 	//모든 클라이언트를 가져온다.
 	UWorld* World = GetWorld();
@@ -83,14 +99,14 @@ void ADSCharacter::ServerRPC_ReadyPlayer_Implementation(int32 PlayerCount)
 
 			if (IsValid(Character))
 			{
-				Character->ClientRPC_ReadyPlayer(PlayerCount);
+				Character->ClientRPC_ReadyPlayer(PlayerCount, ReadyPlayerWidgetTag);
 			}
 		}
 	}
 
 }
 
-void ADSCharacter::ClientRPC_ReadyPlayer_Implementation(int32 PlayerCount)
+void ADSCharacter::ClientRPC_ReadyPlayer_Implementation(int32 PlayerCount, FGameplayTag ReadyPlayerWidgetTag)
 {
 	if (IsLocallyControlled())
 	{
@@ -108,13 +124,12 @@ void ADSCharacter::ClientRPC_ReadyPlayer_Implementation(int32 PlayerCount)
 			UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
 			check(UIManager);
 
-			TSoftClassPtr<UUserWidget>* Widget = WidgetMap.Find(ReadyPlayerWidgetTag);
 
 			// 한명일 때
 			if (PlayerCount==1)
 			{
 				//true로 변경되어질 때 UI를 띄운다.
-				UIManager->PushContentToLayer(PlayerController, ReadyPlayerWidgetTag, *Widget);
+				UIManager->PushContentToLayer(PlayerController, ReadyPlayerWidgetTag);
 			}
 			else
 			{
@@ -125,8 +140,8 @@ void ADSCharacter::ClientRPC_ReadyPlayer_Implementation(int32 PlayerCount)
 		else
 		{
 			//플레이어가 n명일 때
-
-
+			UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
+			check(UIManager);
 		}
 
 	}
@@ -214,6 +229,8 @@ void ADSCharacter::TryPickupItem(int32 ItemIdx)
 			InventoryComponent->StoreItems(nullptr, ItemInfo.ID, 1);
 
 			HeldItem->ServerRPC_RemoveItemData(ItemIdx);
+
+			// DSEVENT_DELEGATE_INVOKE(GameUI.OnUpdateChestWidget, ItemData);
 		}
 	}
 }
@@ -245,8 +262,7 @@ void ADSCharacter::SelectedItem(AActor* Interactor)
 		
 		TArray<FDSItemInfo> ItemInfo = SurroundingItem->GetItemData();
 		bIsShowGiftBox = true;
-
-		DSEVENT_DELEGATE_INVOKE(HeldItem->OnUpdateItemWidget, ItemInfo);
+		// DSEVENT_DELEGATE_INVOKE(GameUI.OnUpdateChestWidget, ItemInfo);
 	}
 }
 
@@ -257,6 +273,16 @@ float ADSCharacter::TakeFinalDamage(float DamageAmount, const FDSDamageEvent& Ne
 		GetStatComponent()->ReceiveDamage(DamageAmount, NewDamageEvent.DamageType, NewDamageEvent.ElementType, this);
 	}
 	return Super::TakeDamage(DamageAmount, NewDamageEvent, EventInstigator, DamageCauser);
+}
+
+void ADSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	if (IsLocallyControlled())
+	{
+		DSPlayerInputComponent->SetupInputComponent(InputComponent);
+	}
 }
 
 
