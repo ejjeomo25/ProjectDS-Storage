@@ -1,0 +1,4 @@
+﻿Name,MaxHP,Attack,Defense,Luck,MoveSpeed,AttackSpeed,AttackRange,HPRegen,HPSteal,DamageBoost,DamageReduction,CDReduction,CritChance,CritDamage
+Girl,100,12,0,0,10,2,4,0.3,0,0,0,0,7,150
+Boy,70,14,0,0,12,3,1,0.2,0,0,0,0,7,150
+Mister,150,10,10,0,10,1,0.6,0.4,0,0,0,0,7,150
