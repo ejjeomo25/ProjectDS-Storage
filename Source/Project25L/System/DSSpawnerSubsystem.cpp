@@ -1,11 +1,11 @@
-// Default
+﻿// Default
 #include "System/DSSpawnerSubsystem.h"
 
 // UE
 
 // Game
-#include "AI/NPC/DSNonCharacter.h"
-#include "GameData/DSGameDataSubsystem.h"
+#include "Character/Enemies/DSNonCharacter.h"
+#include "System/DSGameDataSubsystem.h"
 #include "GameData/DSNonCharacterStat.h"
 #include "GameData/Items/DSItemData.h"
 
@@ -41,6 +41,7 @@ void UDSSpawnerSubsystem::InitializeData()
 
 	UDataTable* ItemDataTable = DataSubsystem->GetDataTable(EDataTableType::ItemData);
 
+	//*****************코드 리뷰 : false ****************************//
 	if (IsValid(ItemDataTable) == false)
 	{
 		return;
@@ -84,11 +85,13 @@ TMap<int32, int32> UDSSpawnerSubsystem::SelectChestItems(TArray<int32>& ItemIDs,
 		ItemID = GetRandomItemID(ItemIDs, TotalProbability);
 
 		//아이템이 0번인 경우는 없음.
+
+		//*****************코드 리뷰 : 0 == ****************************//
 		if (ItemID == 0)
 		{
 			continue;
 		}
-
+		//*****************코드 리뷰 : false ****************************//
 		if (Result.Contains(ItemID) == false)
 		{
 			Result.Add({ ItemID, 1 });
@@ -110,10 +113,6 @@ AActor* UDSSpawnerSubsystem::CreateActor(ESpawnerType SpawnType,int32 SpawnID, F
 	몬스터랑 아이템 스포너 둘을 비슷하도록 만든다.
 	현재 아이템 스포너 int32 아이디를 가지는 것처럼 몬스터 스포너 또한, int32를 사용해서 아이디를 가질 수 있도록 만든다.
 	*/
-
-	UWorld* World = GetWorld();
-
-	check(World);
 
 	//지정된 몬스터 위치에 몬스터를 만든다.
 	UDSGameDataSubsystem* DataSubsystem = UDSGameDataSubsystem::Get(this);
@@ -146,14 +145,16 @@ AActor* UDSSpawnerSubsystem::CreateActor(ESpawnerType SpawnType,int32 SpawnID, F
 
 	if (IsValid(ActorClass))
 	{
+		UWorld* World = GetWorld();
+
+		check(World);
+
 		FActorSpawnParameters Params;
 
 		SpawnObj = World->SpawnActor<AActor>(ActorClass, Location, FRotator::ZeroRotator, Params);
-
-		return SpawnObj;
 	}
 
-	return nullptr;
+	return SpawnObj;
 }
 
 int32 UDSSpawnerSubsystem::GetRandomItemID(TArray<int32>& ItemIDs, float TotalProbability)
@@ -166,7 +167,12 @@ int32 UDSSpawnerSubsystem::GetRandomItemID(TArray<int32>& ItemIDs, float TotalPr
 
 	for (const FSpawnItemInfo& Item : ItemInfo)
 	{
-		if (ItemIDs.Contains(Item.ItemID) == false) continue;
+		//*****************코드 리뷰 : false ****************************//
+		
+		if (ItemIDs.Contains(Item.ItemID) == false)
+		{
+			continue;
+		}
 
 		AccumulatedProbability += Item.SpawnProbability;
 		if (RandomValue <= AccumulatedProbability)

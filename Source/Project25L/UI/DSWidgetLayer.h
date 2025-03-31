@@ -27,7 +27,6 @@ public:
 	UUserWidget* GetTopWidget();
 
 protected:
-	virtual void NativeConstruct() override;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UPanelWidget> Border;

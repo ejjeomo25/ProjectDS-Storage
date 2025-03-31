@@ -4,7 +4,7 @@
 
 // Game
 #include "Character/DSCharacterBase.h"
-#include "Interface/DSAnimationAttackInterface.h"
+
 #include "DSLogChannels.h"
 
 void UAnimNotify_AttackHitCheck::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
@@ -13,9 +13,9 @@ void UAnimNotify_AttackHitCheck::Notify(USkeletalMeshComponent* MeshComp, UAnimS
 
 	if (MeshComp)
 	{
-		if(IDSAnimationAttackInterface* Pawn = Cast<IDSAnimationAttackInterface>(MeshComp->GetOwner()))
-		{
-			Pawn->AttackHitCheck();
-		}
+		// if(IDSAnimationAttackInterface* Pawn = Cast<IDSAnimationAttackInterface>(MeshComp->GetOwner()))
+		// {
+		// 	Pawn->AttackHitCheck();
+		// }
 	}
 }

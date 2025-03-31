@@ -13,16 +13,8 @@
 void UDSPrimaryLayout::NativeConstruct()
 {
     Super::NativeConstruct();
-	if (!GameMenuLayer)
-	{
-		GameMenuLayer = Cast<UDSWidgetLayer>(GetWidgetFromName(TEXT("GameMenuLayer")));
-	}
-	if (!ModalLayer)
-	{
-		ModalLayer = Cast<UDSWidgetLayer>(GetWidgetFromName(TEXT("ModalLayer")));
-	}
+
 	RegisterLayers();
-	
 }
 
 UDSWidgetLayer* UDSPrimaryLayout::FindLayerByTag(FGameplayTag WidgetTag)
@@ -42,7 +34,7 @@ UUserWidget* UDSPrimaryLayout::PushContentToLayer(FGameplayTag WidgetTag)
 
 	UDSWidgetLayer* FindLayer = FindLayerByTag(WidgetTag);
 
-	if (FindLayer)
+	if (IsValid(FindLayer))
 	{
 		return FindLayer->PushWidget(WidgetTag);
 	}
@@ -54,7 +46,7 @@ void UDSPrimaryLayout::PopContentfromLayer(FGameplayTag WidgetTag)
 {
 	UDSWidgetLayer* FindLayer = FindLayerByTag(WidgetTag);
 
-	if (FindLayer)
+	if (IsValid(FindLayer))
 	{
 		FindLayer->PopWidget();
 	}
@@ -65,8 +57,7 @@ void UDSPrimaryLayout::PopContentfromLayer(FGameplayTag WidgetTag)
 void UDSPrimaryLayout::ClearLayer(FGameplayTag WidgetTag)
 {
 	UDSWidgetLayer* FindLayer = FindLayerByTag(WidgetTag);
-
-	if (FindLayer)
+	if (IsValid(FindLayer))
 	{
 		FindLayer->ClearStack();
 	}
@@ -74,8 +65,13 @@ void UDSPrimaryLayout::ClearLayer(FGameplayTag WidgetTag)
 
 void UDSPrimaryLayout::RegisterLayers()
 {
-	LayersMap.Add(FGameplayTag::RequestGameplayTag(FName("UI.Layer.GameMenu")), GameMenuLayer);
-	LayersMap.Add(FGameplayTag::RequestGameplayTag(FName("UI.Layer.Modal")), ModalLayer);
+	//*****************코드 리뷰 : 태그 ****************************//
 
+	if (IsValid(GameMenuLayer) && IsValid(ModalLayer))
+	{
+		LayersMap.Add(FGameplayTag::RequestGameplayTag(FName("UI.Layer.GameMenu")), GameMenuLayer);
+		LayersMap.Add(FGameplayTag::RequestGameplayTag(FName("UI.Layer.Modal")), ModalLayer);
+	}
+	
 }
 

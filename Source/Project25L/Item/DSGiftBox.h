@@ -24,6 +24,8 @@ class PROJECT25L_API ADSGiftBox : public ADSItemActor
 public:
 	ADSGiftBox();
 
+
+	//***************** Bug Fix : 캐릭터 연결해야함!!!! ****************************//
 	// 어떤 아이템이 있는지 띄우기 위한 용도
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateItemWidget, TArray<FDSItemInfo>&);
 	FOnUpdateItemWidget OnUpdateItemWidget;

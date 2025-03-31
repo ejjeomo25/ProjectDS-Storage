@@ -3,9 +3,9 @@
 
 // Game
 #include "System/DSUIManagerSubsystem.h"
-#include "Character/DSCharacter.h"
+#include "Character/Characters/DSCharacter.h"
 #include "DSLogChannels.h"
-#include "UI/DSItemEntry.h"
+#include "UI/Item/DSItemEntry.h"
 
 void UDSListView::HandleListEntryHovered(UUserWidget& EntryWidget)
 {
@@ -43,7 +43,7 @@ void UDSListView::OnItemClickedInternal(UObject* Item)
 
 	APlayerController* PlayerController = GetOwningPlayer();
 
-	if (IsValid(PlayerController) == false)
+	if (false == IsValid(PlayerController))
 	{
 		return;
 	}

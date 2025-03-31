@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -10,11 +10,9 @@
 //UHT
 #include "DSBaseAnimInstance.generated.h"
 
+class ACharacter;
+class UCharacterMovementComponent;
 
-//*****************코드 리뷰 : 아래 별 삭제  ****************************//
-/**
- * 
- */
 UCLASS()
 class PROJECT25L_API UDSBaseAnimInstance : public UAnimInstance
 {
@@ -29,39 +27,38 @@ protected:
 
 protected:
 
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
+	TObjectPtr<ACharacter> Owner;
 
-	//*****************코드 리뷰 : Transient 변경  ****************************//
-	//*****************코드 리뷰 : 전방 선언 수정  ****************************//
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
-	TObjectPtr<class ADSCharacterBase> Player;
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
+	TObjectPtr<UCharacterMovementComponent> Movement;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
-	TObjectPtr<class ACharacter> Owner;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
-	TObjectPtr<class UCharacterMovementComponent> Movement;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
 	FVector Velocity;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
 	float GroundSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
 	uint8 bisIdle : 1;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
-	float MovingThreshould;
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
+	uint8 bIsCrouching : 1;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
 	uint8 bIsFalling : 1;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
 	uint8 bIsJumping : 1;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	UPROPERTY(Transient, BlueprintReadOnly, Category = Character)
+	uint8 bShouldMove : 1;
+
+	UPROPERTY(EditAnywhere, Category = Character)
+	float MovingThreshould;
+
+	UPROPERTY(EditAnywhere, Category = Character)
 	float JumpingThreshould;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
-	uint8 bIsCrouching : 1;
+
 };

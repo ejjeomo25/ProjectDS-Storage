@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -7,7 +7,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSRoomSubsystem.generated.h"
@@ -32,6 +32,6 @@ public:
 
 protected:
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	EDungeonType CurrentStage;
 };

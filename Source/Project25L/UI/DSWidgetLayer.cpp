@@ -9,10 +9,9 @@
 
 UUserWidget* UDSWidgetLayer::PushWidget(FGameplayTag WidgetTag)
 {
-	DS_LOG(DSUILog, Log, TEXT("UDSWidgetLayer::PushWidget %s"), *WidgetTag.ToString());
+	// DS_LOG(DSUILog, Log, TEXT("UDSWidgetLayer::PushWidget %s"), *WidgetTag.ToString());
 	UUserWidget* NewWidget = nullptr;
 
-	// 이미 생성된 위젯이 있는지 확인
 	if (CreatedWidgetsMap.Contains(WidgetTag))
 	{
 		NewWidget = CreatedWidgetsMap[WidgetTag];
@@ -22,33 +21,30 @@ UUserWidget* UDSWidgetLayer::PushWidget(FGameplayTag WidgetTag)
 		TSoftClassPtr<UUserWidget> WidgetClass = FindWidget(WidgetTag);
 
 		UClass* LoadedClass = WidgetClass.Get();
-		if (!IsValid(LoadedClass))
+		if (false == IsValid(LoadedClass))
 		{
 			LoadedClass = WidgetClass.LoadSynchronous();
 		}
 
 		NewWidget = CreateWidget<UUserWidget>(GetOwningPlayer(), LoadedClass);
-		if (!NewWidget)
+		if (false == IsValid(NewWidget))
 		{
 			return nullptr;
 		}
 
-		// 생성한 위젯 저장
 		CreatedWidgetsMap.Add(WidgetTag, NewWidget);
 	}
 
 	CollapseTopWidget();
 
-	if (Border)
+	if (IsValid(Border))
 	{
 		Border->ClearChildren();
 		Border->AddChild(NewWidget);
 	}
 
 	Stack.Add(NewWidget);
-
 	
-
 	ShowTopWidget();
 	return NewWidget;
 
@@ -56,36 +52,35 @@ UUserWidget* UDSWidgetLayer::PushWidget(FGameplayTag WidgetTag)
 
 TSoftClassPtr<UUserWidget> UDSWidgetLayer::FindWidget(FGameplayTag WidgetTag)
 {
-	// TSoftClassPtr<UUserWidget> FoundWidget = *WidgetsMap.Find(WidgetTag);
-	// if (FoundWidget)
-	// {
-	// 	return FoundWidget;
-	// }
-	// 
+
 	for (const auto& Pair : WidgetsMap)
 	{
 		if (WidgetTag.MatchesTagExact(Pair.Key))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("FindWidget: Tag matched manually: %s"), *Pair.Key.ToString());
 			return Pair.Value;
 		}
 	}
-
-
 	return nullptr;
 }
 
 void UDSWidgetLayer::PopWidget()
 {
-	if(Stack.Num() == 0)
-		return ;
+
+	if (Stack.Num() == 0)
+	{	
+		return;
+	}
+
 	UUserWidget * TopWidget = GetTopWidget();
 
 	if (IsValid(TopWidget))
 	{
 		TopWidget->SetVisibility(ESlateVisibility::Collapsed);
-		Stack.RemoveAt(Stack.Num() - 1);
 
+		if (Stack.Num() > 0)
+		{
+			Stack.RemoveAt(Stack.Num() - 1);
+		}
 	}
 	Border->ClearChildren();
 
@@ -148,10 +143,3 @@ UUserWidget* UDSWidgetLayer::GetTopWidget()
 
 	return Stack.Last();
 }
-
-void UDSWidgetLayer::NativeConstruct()
-{
-	Super::NativeConstruct();
-}
-
-

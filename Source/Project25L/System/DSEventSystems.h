@@ -9,7 +9,7 @@
 
 // Game
 #include "GameData/Items/DSItemData.h"
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSEventSystems.generated.h"
@@ -33,7 +33,7 @@
     {                                                       \
         (EventName).RemoveAll(Object);                      \
     }                                                       \
-}														\
+}															\
 
 
 class UMaterialInterface;

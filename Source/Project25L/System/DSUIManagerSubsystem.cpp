@@ -5,14 +5,15 @@
 #include "GameplayTagContainer.h"
 
 // Game
-#include "HUD/DSHUD.h"
 #include "DSLogChannels.h"
-#include "UI/DSWidgetLayer.h"
-#include "System/DSGameInstance.h"
 #include "Player/DSPlayerController.h"
+#include "System/DSGameInstance.h"
 #include "UI/DSPrimaryLayout.h"
 
-UDSUIManagerSubsystem::UDSUIManagerSubsystem():Super()
+
+UDSUIManagerSubsystem::UDSUIManagerSubsystem()
+	: Super()
+	, PrimaryWidget(nullptr)
 {
 	
 }
@@ -26,7 +27,6 @@ UDSUIManagerSubsystem* UDSUIManagerSubsystem::Get(UObject* Object)
 	UDSGameInstance* GameInstance = Cast<UDSGameInstance>(World->GetGameInstance());
 
 	check(GameInstance);
-
 	return GameInstance->GetSubsystem<UDSUIManagerSubsystem>();
 }
 
@@ -34,35 +34,59 @@ UDSUIManagerSubsystem* UDSUIManagerSubsystem::Get(UObject* Object)
 
 UUserWidget* UDSUIManagerSubsystem::PushContentToLayer(FGameplayTag LayerName)
 {
-	UUserWidget* NewWidget = PrimaryWidget->PushContentToLayer(LayerName);
-
-	if (NewWidget)
+	if (IsValid(PrimaryWidget))
 	{
-		return NewWidget;
-	}
+		UUserWidget* NewWidget = PrimaryWidget->PushContentToLayer(LayerName);
+
+		if (IsValid(NewWidget))
+		{
+			return NewWidget;
+		}
+	}	
+	
 	return nullptr;
 }
 
 void UDSUIManagerSubsystem::PopContentToLayer(FGameplayTag LayerName)
 {
-	PrimaryWidget->PopContentfromLayer(LayerName);
+	if (IsValid(PrimaryWidget))
+	{
+		PrimaryWidget->PopContentfromLayer(LayerName);
+	}
 }
 
 void UDSUIManagerSubsystem::ClearLayer(FGameplayTag LayerName)
 {
-	PrimaryWidget->ClearLayer(LayerName);
+	if (IsValid(PrimaryWidget))
+	{
+		PrimaryWidget->ClearLayer(LayerName);
+	}
 }
 
 void UDSUIManagerSubsystem::FocusGame(APlayerController* PlayerController)
 {
-	ADSPlayerController* DSPlayerController = Cast<ADSPlayerController>(PlayerController);
-	DSPlayerController->SetGameFocusMode();
+	if (IsValid(PlayerController))
+	{
+		ADSPlayerController* DSPlayerController = Cast<ADSPlayerController>(PlayerController);
+
+		if (IsValid(DSPlayerController))
+		{
+			DSPlayerController->SetGameFocusMode();
+		}
+	}	
 }
 
 void UDSUIManagerSubsystem::FocusModal(APlayerController* PlayerController)
 {
-	ADSPlayerController* DSPlayerController = Cast<ADSPlayerController>(PlayerController);
-	DSPlayerController->SetUIFocusMode();
+	if (IsValid(PlayerController))
+	{
+		ADSPlayerController* DSPlayerController = Cast<ADSPlayerController>(PlayerController);
+
+		if (IsValid(DSPlayerController))
+		{
+			DSPlayerController->SetUIFocusMode();
+		}
+	}
 }
 
 bool UDSUIManagerSubsystem::RegisterWidget(UDSPrimaryLayout* Widget)

@@ -22,6 +22,8 @@ public:
 	UDSGameUtils();
 
 	static UDSGameUtils* Get(UObject* Object);
+	
+public:
 	/**
 	* @details 액터가 캐릭터의 시야범위에 드는지를 확인해주는 함수
 	* @param[in] Character 실제 캐릭터
@@ -30,9 +32,11 @@ public:
 	* @return bool 시야 범위 내 있는지 결정하는 함수
 	*/
 	static bool IsWithinCharacterFOV(const ACharacter* Character,const AActor* Target, float AnchorAngle);
-	static int GetSpreadOffsetIdx();
-	static float GetSpreadOffset(int Idx);
+	static float GetSpreadOffset();
+	
+	static void LoadSpreadOffset(FString Path, float SpreadCoef);
 
+public:
 	/**
 	* @details PlayerController을 넘겼을 때 캐릭터를 리턴하는 함수
 	* @param[in] PlayerController
@@ -45,13 +49,9 @@ public:
 	*/
 	static APlayerController* GetPlayerController(const ACharacter* Character);
 
-	/**
-	*
-	* 
-	*/
-	static uint32 GenerateUniqueSkillID();
 
-	static void LoadSpreadOffset(FString Path, float SpreadCoef);
+public:
+	static uint32 GenerateUniqueSkillID();
 
 private:
 	/**
@@ -92,6 +92,8 @@ protected:
 
 	/*Offset 관련 함수*/
 	static void GenerateUniqueSpreadOffset(float SpreadCoef);
+protected:
+
 	static FString ReadFromFile(FString FilePath, bool& bOutSuccess);
 	static void WriteToFile(FString FilePath, FString String, bool& bOutSuccess);
 

@@ -1,11 +1,11 @@
-﻿// Default
+// Default
 #include "Gimmick/DSDungeonMat.h"
 
 // UE
 #include "Components/BoxComponent.h"
 
 // Game
-#include "Character/DSCharacter.h"
+#include "Character/Characters/DSCharacter.h"
 #include "GameData/Gimmick/DSDoorData.h"
 #include "Player/DSPlayerController.h"
 #include "System/DSEventSystems.h"
@@ -50,10 +50,6 @@ void ADSDungeonMat::InitializeData(const FString& DoorDestination)
 
 void ADSDungeonMat::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (HasAuthority() == false)
-	{
-		return;
-	}
 	ADSCharacter* Character = Cast<ADSCharacter>(OtherActor);
 
 	if (IsValid(Character))
@@ -120,11 +116,11 @@ void ADSDungeonMat::PrepareDungeonTravel()
 
 	for (const auto OverlappedPlayer : OverlappedPlayers)
 	{
-		ADSPlayerController* PC = OverlappedPlayer->GetController<ADSPlayerController>();
+		ADSPlayerController* PlayerController = OverlappedPlayer->GetController<ADSPlayerController>();
 
-		if (IsValid(PC))
+		if (IsValid(PlayerController))
 		{
-			PC->ShowUI();
+			// UI 보이게 설정
 		}
 	}
 

@@ -4,7 +4,7 @@
 
 // UE
 #include "Engine/DataTable.h"
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // Game
 

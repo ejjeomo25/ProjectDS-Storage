@@ -3,14 +3,14 @@
 
 //UE
 #include "Components/CapsuleComponent.h"
-#include "Engine/StreamableManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 //Game
+#include "Components/DSStatComponent.h"
+#include "Components/Skill/DSSkillControlComponent.h"
 #include "DSLogChannels.h"
-#include "Skill/DSSkillControlComponent.h"
-#include "Stat/DSStatComponent.h"
 #include "System/DSEventSystems.h"
+#include "System/DSGameDataSubsystem.h"
 
 ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer)
@@ -85,9 +85,7 @@ void ADSCharacterBase::Initialize()
 {
 	TSoftObjectPtr<USkeletalMesh> SkeletalMesh; //실제론 데이터를 받도록 한다.
 	
-	//*****************코드 리뷰 : 전역으로 대체 ****************************//
-	FStreamableManager StreamableManager;
-	StreamableManager.RequestAsyncLoad(SkeletalMesh.ToSoftObjectPath(), FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSCharacterBase>(this), SkeletalMesh]()
+	UDSGameDataSubsystem::StreamableManager.RequestAsyncLoad(SkeletalMesh.ToSoftObjectPath(), FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSCharacterBase>(this), SkeletalMesh]()
 		{
 			
 			if (SkeletalMesh.IsValid())

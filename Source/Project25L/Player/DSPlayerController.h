@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -6,7 +6,7 @@
 #include "GameFramework/PlayerController.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 //UHT
 #include "DSPlayerController.generated.h"
@@ -23,8 +23,6 @@ public:
 	ADSPlayerController();
 
 public:
-
-	void ShowUI();
 	void SetUIFocusMode();
 	void SetGameFocusMode();
 	
@@ -37,8 +35,6 @@ public:
 
 	UFUNCTION(Server, Unreliable)
 	void ServerRPC_CheatAll(const FString& Message);
-protected:
-	virtual void OnPossess(APawn* aPawn) override;
 
 protected:
 	

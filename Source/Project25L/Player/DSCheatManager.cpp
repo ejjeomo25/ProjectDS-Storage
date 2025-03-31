@@ -1,4 +1,4 @@
-//Default
+﻿//Default
 #include "Player/DSCheatManager.h"
 
 //UE
@@ -9,12 +9,12 @@
 //Game
 #include "DSLogChannels.h"
 #include "Player/DSPlayerController.h"
-#include "Input/DSPlayerInputComponent.h"
-#include "Character/DSCharacter.h"
-#include "Skill/DSSkillControlComponent.h"
-#include "Skill/DSSkillBase.h"
-#include "Skill/DSTestSkill.h"
-#include "Stat/DSStatComponent.h"
+#include "Components/DSPlayerInputComponent.h"
+#include "Character/Characters/DSCharacter.h"
+#include "Components/Skill/DSSkillControlComponent.h"
+#include "Skill/Base/DSSkillBase.h"
+#include "Skill/Base/DSTestSkill.h"
+#include "Components/DSStatComponent.h"
 
 void UDSCheatManager::CheatOutputText(const FString& TextToOutput)
 {

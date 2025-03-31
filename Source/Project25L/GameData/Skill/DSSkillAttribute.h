@@ -7,7 +7,7 @@
 #include "Engine/DataTable.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSSkillAttribute.generated.h"

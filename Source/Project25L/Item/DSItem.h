@@ -7,7 +7,7 @@
 #include "UObject/Interface.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSItem.generated.h"

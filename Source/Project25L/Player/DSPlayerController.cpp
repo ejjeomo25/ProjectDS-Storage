@@ -1,4 +1,4 @@
-//Default
+﻿//Default
 #include "Player/DSPlayerController.h"
 
 //UE
@@ -16,16 +16,7 @@ ADSPlayerController::ADSPlayerController()
 #endif
 }
 
-void ADSPlayerController::ShowUI()
-{
-	//클라이언트에서만 실행되어진다.
-	ADSHUD* HUD = GetHUD<ADSHUD>();
 
-	if (IsValid(HUD))
-	{
-		HUD->SetVisibilityWidget(EWidgetType::HUBMainWidget, true);
-	}
-}
 
 void ADSPlayerController::SetUIFocusMode()
 {
@@ -74,11 +65,5 @@ void ADSPlayerController::ServerRPC_CheatAll_Implementation(const FString& Messa
 			}
 		}
 	}
-}
-
-
-void ADSPlayerController::OnPossess(APawn* aPawn)
-{
-	Super::OnPossess(aPawn);
 }
 

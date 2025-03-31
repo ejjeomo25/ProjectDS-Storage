@@ -8,7 +8,7 @@
 #include "GameFramework/Actor.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSDungeonDoor.generated.h"
@@ -41,12 +41,14 @@ protected:
 
 	void InitializeStage();
 
+protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 protected:
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Lock)
-	bool bIsUnlocked;
+	uint8 bIsUnlocked : 1;
 
 	UPROPERTY(Transient)
 	TObjectPtr<ADSDungeonMat> MatVolume;

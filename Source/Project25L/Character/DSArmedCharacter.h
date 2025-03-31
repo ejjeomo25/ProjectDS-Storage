@@ -4,17 +4,25 @@
 #include "CoreMinimal.h"
 
 // Game
-#include "Character/DSCharacter.h"
-#include "System/DSEnums.h"
+#include "Character/Characters/DSCharacter.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSArmedCharacter.generated.h"
 
 UENUM(BlueprintType)
-enum class EWeaponEquipState : uint8
+enum class EWeaponState : uint8
 {
 	Unequipped UMETA(DisplayName = "Unequipped"),
-	Equipped   UMETA(DisplayName = "Equipped")
+	Equipped   UMETA(DisplayName = "Equipped"),
+	Attack	   UMETA(DisplayName = "Attack")
+};
+
+UENUM(BlueprintType)
+enum class EWeaponSocketType : uint8
+{
+	Stow UMETA(DisplayName = "Store weapons"),
+	Equipped UMETA(DisplayName = "Equip Weapons")
 };
 
 class ADSWeapon;
@@ -27,40 +35,52 @@ class PROJECT25L_API ADSArmedCharacter : public ADSCharacter
 public:
 	ADSArmedCharacter(const FObjectInitializer& ObjectInitializer);
 
+public:
+/*Getter 함수*/
+	const ADSWeapon* GetWeapon() const { return Weapon; }
 	bool GetIsEquipped() { return bIsEquipped; }
-	void Equip();
-	void UnEquip();
-	void MoveEquip();
+
 	virtual float GetInputThreshold() override;
 
-	const ADSWeapon* GetWeapon() const { return Weapon; }
-protected:
-
-	UFUNCTION(Server, Reliable)
-	void ServerRPC_EquipWeapon(EWeaponEquipState EquipState);
-
-	UFUNCTION(Client, Reliable)
-	void ClientRPC_EquipWeapon(ADSArmedCharacter* Character, EWeaponEquipState EquipState);
+public:
+/*무기를 장착하고, 무기와 관련된 애니메이션 몽타주를 실행하는 함수*/
+	void Equip();
+	
+	void UnEquip();
+	
+	void MoveEquip();
 
 	void LoadWeapon();
 
-protected:
+	void PlayAnimation(EWeaponState WeaponState);
 
+protected:
+/*RPC*/
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_EquipWeapon(EWeaponState EquipState);
+
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_EquipWeapon(ADSArmedCharacter* Character, EWeaponState EquipState);
+	
+protected:
+/*Unreal Engine 기본 함수*/
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	UPROPERTY(Transient)
-	TMap<EWeaponEquipState,TObjectPtr<UAnimMontage>> EquipMontages;
+	TMap<EWeaponState,TObjectPtr<UAnimMontage>> WeaponMontages;
 
-	//*****************코드 리뷰 : uint8 변경  ****************************//
 	UPROPERTY(Transient)
-	bool bIsEquipped;
+	uint8 bIsEquipped : 1;
 
 	UPROPERTY(Transient, Replicated)
 	TObjectPtr<ADSWeapon> Weapon;
 
-	UPROPERTY(EditAnywhere, Category = Weapon)
+	UPROPERTY(EditAnywhere, Category = "Setting | Weapon")
+	TMap<EWeaponSocketType, FName> SocketName;
+
+	UPROPERTY(EditAnywhere, Category = "Setting | Weapon")
 	EWeaponType WeaponType;
 
 };

@@ -7,7 +7,7 @@
 #include "Engine/DataTable.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSItemData.generated.h"
@@ -84,5 +84,5 @@ class PROJECT25L_API UDSItemUI : public UObject
 public:
 
 	int32 ID;
-	bool bIsSelected;
+	uint8 bIsSelected : 1;
 };

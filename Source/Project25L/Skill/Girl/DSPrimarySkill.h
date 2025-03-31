@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 
 // Game
-#include "Skill/DSSkillBase.h"
+#include "Skill/Base/DSSkillBase.h"
 
 // UHT
 #include "DSPrimarySkill.generated.h"
@@ -16,7 +16,7 @@ class PROJECT25L_API UDSPrimarySkill : public UDSSkillBase
 	GENERATED_BODY()
 
 public:
-	UDSPrimarySkill();
+	UDSPrimarySkill(const FObjectInitializer& ObjectInitalize);
 
 protected:
 

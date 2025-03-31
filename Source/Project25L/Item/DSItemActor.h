@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSItemActor.generated.h"
@@ -32,9 +32,10 @@ public:
 
 	int32 GetID() const { return ItemID; }
 	const TArray<FDSItemInfo>& GetItemData() const { return StoredItems; }
-	void InitializeItemData(TMap<int32, int32> ItemData);
-
 	EInteractType GetInteractType() { return InteractType; }
+
+public:
+	void InitializeItemData(TMap<int32, int32> ItemData);
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -45,6 +46,7 @@ protected:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+protected:
 	void InitLocation();
 
 	UFUNCTION()

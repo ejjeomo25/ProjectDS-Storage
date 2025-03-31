@@ -11,11 +11,7 @@
 #include "DSUIManagerSubsystem.generated.h"
 
 
-
-
- class UDSWidgetLayer;
- class DSPlayerController;
- class UDSPrimaryLayout;
+class UDSPrimaryLayout;
 
 UCLASS()
 class PROJECT25L_API UDSUIManagerSubsystem : public UGameInstanceSubsystem
@@ -34,9 +30,6 @@ public:
 
 	bool RegisterWidget(UDSPrimaryLayout *Widget);
 
-	UPROPERTY(EditAnywhere, Category = "Config")
-	TMap<FGameplayTag, UUserWidget*> LayersTop;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
+	UPROPERTY(Transient)
 	TObjectPtr<UDSPrimaryLayout> PrimaryWidget;
 };

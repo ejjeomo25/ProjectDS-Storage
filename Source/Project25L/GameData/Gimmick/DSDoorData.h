@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -7,7 +7,7 @@
 #include "Engine/DataAsset.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSDoorData.generated.h"

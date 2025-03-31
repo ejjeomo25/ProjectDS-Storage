@@ -4,10 +4,10 @@
 
 // UE
 #include "Engine/DataTable.h"
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // Game
-#include "Item/Weapon/DSWeapon.h"
+#include "Weapon/DSWeapon.h"
 
 // UHT
 #include "DSWeaponData.generated.h"
@@ -31,6 +31,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
 	TSoftObjectPtr<UAnimMontage> UnEquipMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	TSoftObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
 	TSoftClassPtr<ADSWeapon> Weapon;

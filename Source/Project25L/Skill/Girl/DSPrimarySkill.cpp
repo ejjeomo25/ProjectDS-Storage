@@ -7,15 +7,16 @@
 // Game
 #include "Character/DSArmedCharacter.h"
 #include "DSLogChannels.h"
-#include "Item/Weapon/DSWeapon.h"
-#include "Skill/DSSkillControlComponent.h"
+#include "Weapon/DSWeapon.h"
+#include "Components/Skill/DSSkillControlComponent.h"
 
-UDSPrimarySkill::UDSPrimarySkill()
+UDSPrimarySkill::UDSPrimarySkill(const FObjectInitializer& ObjectInitalize)
+	: Super(ObjectInitalize)
 {
 	bSkillHasCooltime = false;
-	SkillName = FName("PrimarySkill_Girl");
-
-	InstancingPolicy = ESkillInstancingPolicy::NonInstanced;
+	InstancingPolicy = ESkillInstancingPolicy::InstancedPerActor;
+	NetExecutionPolicy = ESkillNetExecutionPolicy::LocalPredicted;
+	ReplicationPolicy = ESkillReplicationPolicy::ReplicateYes;
 }
 
 void UDSPrimarySkill::CallActivateSkill(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo)
@@ -44,6 +45,7 @@ void UDSPrimarySkill::ActivateSkill(const FDSSkillSpecHandle Handle, const FDSSk
 		}
 	}
 
+	EndSkill(Handle, ActorInfo, true, true);
 }
 
 void UDSPrimarySkill::EndSkill(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo, bool bReplicateEndSkill, bool bWasCancelled)

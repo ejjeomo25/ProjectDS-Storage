@@ -8,7 +8,7 @@
 #include "GameplayTagContainer.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSDungeonMat.generated.h"
@@ -66,7 +66,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timer)
 	float WaitSec;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Collision)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings | Collision")
 	TObjectPtr<UBoxComponent> Trigger;
 
 	UPROPERTY(EditAnywhere, Category = "Settings|Tag")

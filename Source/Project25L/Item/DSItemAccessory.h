@@ -30,5 +30,4 @@ protected:
 	UPROPERTY(Transient)
 	float Duration;
 
-
 };

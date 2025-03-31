@@ -5,23 +5,24 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BlackboardData.h"
-#include "Engine/StreamableManager.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISenseConfig_Sight.h"
 
 // Game
+#include "System/DSGameDataSubsystem.h"
 #include "DSLogChannels.h"
 
 
-//*****************코드 리뷰 : 초기화리스트 사용해서 변수 리셋 ****************************//
 ADSAIControllerBase::ADSAIControllerBase()
+	: Super()
+	, BehaviorTree(nullptr)
+	, BlackboardData(nullptr)
 {
 	AIPerception = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerception"));
 
 	UAISenseConfig_Sight* SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 	AIPerception->ConfigureSense(*SightConfig);
-
 }
 
 void ADSAIControllerBase::OnPossess(APawn* InPawn)
@@ -37,10 +38,9 @@ void ADSAIControllerBase::LoadData()
 	AssetsToLoad.Add(BlackboardAsset.ToSoftObjectPath());
 	AssetsToLoad.Add(BehaviorTreeAsset.ToSoftObjectPath());
 
-	FStreamableManager StreamableManager;
-	StreamableManager.RequestAsyncLoad(AssetsToLoad, FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSAIControllerBase>(this)]()
+	UDSGameDataSubsystem::StreamableManager.RequestAsyncLoad(AssetsToLoad, FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSAIControllerBase>(this)]()
     {
-        if (WeakPtr.IsValid() == false)
+        if (false == WeakPtr.IsValid())
         {
             return;
         }

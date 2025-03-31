@@ -18,5 +18,4 @@ protected:
 	virtual void HandleListEntryHovered(UUserWidget& EntryWidget) override;
 	virtual void HandleListEntryUnhovered(UUserWidget& EntryWidget) override;
 	virtual void OnItemClickedInternal(UObject* Item) override;
-
 };

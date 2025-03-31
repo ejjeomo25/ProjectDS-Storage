@@ -89,12 +89,13 @@ void ADSDungeonDoor::DestroyDoor(EDungeonType CurrentType)
 
 void ADSDungeonDoor::InitializeStage()
 {
-	if (IsValid(DungeonDoorData) == false)
+
+	if (false == IsValid(DungeonDoorData))
 	{
 		return;
 	}
 
-	if (IsValid(GeometryCollection) == false)
+	if (false == IsValid(GeometryCollection))
 	{
 		return;
 	}

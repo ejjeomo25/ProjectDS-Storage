@@ -8,7 +8,6 @@
 // UHT
 #include "DSReadyPlayersWidget.generated.h"
 
-class UImage;
 class UTextBlock;
 
 UCLASS()

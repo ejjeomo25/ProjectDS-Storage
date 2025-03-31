@@ -8,8 +8,7 @@
 #include "GameplayTagContainer.h"
 
 // Game
-#include "System/DSEnums.h"
-
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSHUD.generated.h"
@@ -17,8 +16,6 @@
 class UUserWidget;
 class UDSWidgetLayer;
 class UDSPrimaryLayout;
-
-
 
 
 UCLASS()
@@ -29,14 +26,10 @@ class PROJECT25L_API ADSHUD : public AHUD
 public:
 
 	virtual void BeginPlay() override;
-
-	void SetVisibilityWidget(EWidgetType WigdetType, bool bShouldShow);
-
 	void InitializeWidgets();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
 	TSubclassOf<UDSPrimaryLayout> PrimaryLayoutClass;
-
 
 };

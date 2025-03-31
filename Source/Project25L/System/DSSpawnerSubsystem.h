@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -7,17 +7,11 @@
 #include "Subsystems/WorldSubsystem.h"
 
 // Game
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSSpawnerSubsystem.generated.h"
 
-class AActor;
-class UWorld;
-class UDSGameDataSubsystem;
-
-struct FDSNonCharacterStat;
-struct FDSItemData;
 
 USTRUCT()
 struct FSpawnItemInfo

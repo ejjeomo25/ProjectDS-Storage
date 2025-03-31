@@ -11,10 +11,6 @@
 // UHT
 #include "DSPrimaryLayout.generated.h"
 
-/**
- * 
- */
-class UUserWidget;
 class UDSWidgetLayer;
 
 UCLASS()
@@ -43,13 +39,12 @@ private:
 	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UDSWidgetLayer>> LayersMap;
 
-
 	// 인벤토리 및 퀘스트 화면, 게임 플레이 메뉴
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UPROPERTY(EditAnywhere, meta = (BindWidgetOptions))
 	TObjectPtr<UDSWidgetLayer> GameMenuLayer;
 	
 	// 팝업 및 대화상자
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UPROPERTY(EditAnywhere, meta = (BindWidgetOptions))
 	TObjectPtr<UDSWidgetLayer> ModalLayer;
 
 };

@@ -6,7 +6,7 @@
 
 // Game
 #include "System/DSGameInstance.h"
-#include "Character/DSCharacter.h"
+#include "Character/Characters/DSCharacter.h"
 
 
 TArray<float> UDSGameUtils::SpreadOffsets;
@@ -55,14 +55,14 @@ bool UDSGameUtils::IsWithinCharacterFOV(const ACharacter* Character, const AActo
 	return Dot >= CosThreshold;
 }
 
-int UDSGameUtils::GetSpreadOffsetIdx()
+float UDSGameUtils::GetSpreadOffset()
 {
-	int32 Idx = FMath::RandRange(0, SpreadOffsets.Num());
-	return Idx;
-}
+	int32 Idx = FMath::RandRange(0, SpreadOffsets.Num() - 1);
 
-float UDSGameUtils::GetSpreadOffset(int Idx)
-{
+	if (false == SpreadOffsets.IsValidIndex(Idx))
+	{
+		return 0.f;
+	}
 	return SpreadOffsets[Idx];
 }
 
@@ -77,7 +77,7 @@ void UDSGameUtils::GenerateUniqueSpreadOffset(float SpreadCoef)
 		int32 Key = FMath::RoundToInt(Raw * 10000.0f); // 정밀도 0.0001f
 
 		// Set을 사용해서, 중복 검사를 O(1) 수준으로 만들 수 있다.
-		if (UniqueOffsets.Contains(Key) == false)
+		if (false == UniqueOffsets.Contains(Key))
 		{
 			UniqueOffsets.Add(Key);
 			SpreadOffsets.Add(Raw);
@@ -98,6 +98,7 @@ ACharacter* UDSGameUtils::GetCharacter(const APlayerController* PlayerController
 
 APlayerController* UDSGameUtils::GetPlayerController(const ACharacter* Character)
 {
+	//*****************코드 리뷰 : Character 방어코드 ****************************//
 	APlayerController* PlayerController = Character->GetController<APlayerController>();
 
 	if (IsValid(PlayerController))
@@ -130,6 +131,8 @@ void UDSGameUtils::LoadSpreadOffset(FString Path, float SpreadCoef)
 
 		for (const FString& Line : Lines)
 		{
+
+			//*****************코드 리뷰 : false ****************************//
 			if (!Line.IsEmpty())
 			{
 				float Value = FCString::Atof(*Line);
@@ -163,12 +166,14 @@ FString UDSGameUtils::ReadFromFile(FString FilePath, bool& bOutSuccess)
 	IPlatformFile& PlatformFile = PlatformFileManager.GetPlatformFile();
 
 	FString RetString = "";
+
+	//*****************코드 리뷰 : false ****************************//
 	if (!PlatformFile.FileExists(*FilePath))
 	{
 		bOutSuccess = false;
 		return RetString;
 	}
-
+	//*****************코드 리뷰 : false ****************************//
 	if (FFileHelper::LoadFileToString(RetString, *FilePath) == false)
 	{
 		bOutSuccess = false;
@@ -180,6 +185,7 @@ FString UDSGameUtils::ReadFromFile(FString FilePath, bool& bOutSuccess)
 
 void UDSGameUtils::WriteToFile(FString FilePath, FString String, bool& bOutSuccess)
 {
+	//*****************코드 리뷰 : false ****************************//
 	if (FFileHelper::SaveStringToFile(String, *FilePath) == false)
 	{
 		bOutSuccess = false;

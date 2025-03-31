@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "Item/DSItemActor.h"
 
 // UE
@@ -9,7 +9,7 @@
 
 // Game
 #include "GameData/Items/DSItemData.h"
-#include "Character/DSCharacter.h"
+#include "Character/Characters/DSCharacter.h"
 #include "DSLogChannels.h"
 #include "System/DSGameUtils.h"
 #include "System/DSEventSystems.h"
@@ -133,6 +133,9 @@ void ADSItemActor::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedCompon
 	
 	//UI 띄우는 작업 ('F'키를 눌러라.. 등등)
 	ADSCharacter* Character = Cast<ADSCharacter>(OtherActor);
+
+
+	//*****************코드 리뷰 : false == . ****************************//
 	if (!IsValid(Character))
 	{
 		return;
@@ -161,6 +164,8 @@ void ADSItemActor::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedCompon
 
 void ADSItemActor::OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+
+	//*****************코드 리뷰 : false. ****************************//
 	ADSCharacter* Character = Cast<ADSCharacter>(OtherActor);
 	if (!IsValid(Character))
 	{

@@ -2,13 +2,12 @@
 #include "Character/DSArmedCharacter.h"
 
 // UE
-#include "Engine/StreamableManager.h"
 #include "Net/UnrealNetwork.h"
 
 // Game
-#include "GameData/DSGameDataSubsystem.h"
+#include "System/DSGameDataSubsystem.h"
 #include "GameData/DSWeaponData.h"
-#include "Item/Weapon/DSWeapon.h"
+#include "Weapon/DSWeapon.h"
 
 
 ADSArmedCharacter::ADSArmedCharacter(const FObjectInitializer& ObjectInitializer)
@@ -35,13 +34,11 @@ void ADSArmedCharacter::LoadWeapon()
 
 	if (nullptr != WeaponData)
 	{
-		FStreamableManager StreamableManager;
-
 		if (HasAuthority())
 		{
 			TSoftClassPtr<ADSWeapon> WeaponMesh = WeaponData->Weapon;
 
-			StreamableManager.RequestAsyncLoad(WeaponMesh.ToSoftObjectPath(), FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSArmedCharacter>(this), WeaponMesh]()
+			UDSGameDataSubsystem::StreamableManager.RequestAsyncLoad(WeaponMesh.ToSoftObjectPath(), FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSArmedCharacter>(this), WeaponMesh]()
 				{
 					UWorld* World = WeakPtr->GetWorld();
 
@@ -62,66 +59,28 @@ void ADSArmedCharacter::LoadWeapon()
 		}
 
 		//애니메이션은 둘 다 가지고 온다.
-		EquipMontages.Add(EWeaponEquipState::Equipped, WeaponData->EquipMontage.LoadSynchronous());
-		EquipMontages.Add(EWeaponEquipState::Unequipped, WeaponData->UnEquipMontage.LoadSynchronous());
+		WeaponMontages.Add(EWeaponState::Equipped, WeaponData->EquipMontage.LoadSynchronous());
+		WeaponMontages.Add(EWeaponState::Unequipped, WeaponData->UnEquipMontage.LoadSynchronous());
+		WeaponMontages.Add(EWeaponState::Attack, WeaponData->AttackMontage.LoadSynchronous());
 	}
 }
 
 void ADSArmedCharacter::Equip()
 {
-	EWeaponEquipState EquipState = EWeaponEquipState::Equipped;
+	EWeaponState EquipState = EWeaponState::Equipped;
 
+	PlayAnimation(EquipState);
 
-	//*****************코드 리뷰 : PlayMontage 부분 함수로 빼기 ****************************//
-	if (EquipMontages.Contains(EquipState) == false)
-	{
-		return;
-	}
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if (IsValid(AnimInstance))
-	{
-		if (AnimInstance->Montage_IsPlaying(EquipMontages[EquipState]))
-		{
-			//현재 애니메이션 몽타주가 실행중임으로 리턴한다.
-			return;
-		}
-	}
-	if (IsValid(EquipMontages[EquipState]))
-	{
-		PlayAnimMontage(EquipMontages[EquipState]);
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	
 	//애니메이션을 실행한다.
 	ServerRPC_EquipWeapon(EquipState);
 }
 
 void ADSArmedCharacter::UnEquip()
 {
-	EWeaponEquipState EquipState = EWeaponEquipState::Unequipped;
+	EWeaponState EquipState = EWeaponState::Unequipped;
 
-	if (EquipMontages.Contains(EquipState) == false)
-	{
-		return;
-	}
-	
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	PlayAnimation(EquipState);
 
-	if (IsValid(AnimInstance))
-	{
-		if (AnimInstance->Montage_IsPlaying(EquipMontages[EquipState]))
-		{
-			//현재 애니메이션 몽타주가 실행중임으로 리턴한다.
-			return;
-		}
-	}
-
-	if (IsValid(EquipMontages[EquipState]))
-	{
-		PlayAnimMontage(EquipMontages[EquipState]);
-	}
 	//애니메이션을 실행한다.
 	ServerRPC_EquipWeapon(EquipState);
 }
@@ -129,17 +88,49 @@ void ADSArmedCharacter::UnEquip()
 void ADSArmedCharacter::MoveEquip()
 {
 
-	//*****************코드 리뷰 : 변수로 빼기 EditAnywhere ****************************//
+	EWeaponSocketType SocketType = EWeaponSocketType::Stow;
+
 	if (bIsEquipped)
 	{
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("weapon_stow"));
+		SocketType = EWeaponSocketType::Stow;
 	}
 	else
 	{
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("ik_hand_r"));
+		SocketType = EWeaponSocketType::Equipped;
 	}
 
+	if (IsValid(Weapon))
+	{
+		if (SocketName.Contains(SocketType))
+		{
+			Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, SocketName[SocketType]);
+		}
+	}
+	
 	bIsEquipped = !bIsEquipped;
+}
+
+void ADSArmedCharacter::PlayAnimation(EWeaponState WeaponState)
+{
+	if (false == WeaponMontages.Contains(WeaponState))
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (IsValid(AnimInstance))
+	{
+		if (AnimInstance->Montage_IsPlaying(WeaponMontages[WeaponState]))
+		{
+			//현재 애니메이션 몽타주가 실행중임으로 리턴한다.
+			return;
+		}
+	}
+	if (IsValid(WeaponMontages[WeaponState]))
+	{
+		PlayAnimMontage(WeaponMontages[WeaponState]);
+	}
 }
 
 float ADSArmedCharacter::GetInputThreshold()
@@ -157,16 +148,13 @@ float ADSArmedCharacter::GetInputThreshold()
 	return 0.0f;
 }
 
-void ADSArmedCharacter::ServerRPC_EquipWeapon_Implementation(EWeaponEquipState EquipState)
+void ADSArmedCharacter::ServerRPC_EquipWeapon_Implementation(EWeaponState EquipState)
 {
 	UWorld* World = GetWorld();
 
 	check(World);
 
-	if (EquipMontages.Contains(EquipState))
-	{
-		PlayAnimMontage(EquipMontages[EquipState]);
-	}
+	PlayAnimation(EquipState);
 
 	for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
 	{
@@ -174,8 +162,7 @@ void ADSArmedCharacter::ServerRPC_EquipWeapon_Implementation(EWeaponEquipState E
 
 		if (IsValid(PlayerController) && GetController() != PlayerController)
 		{
-			//*****************코드 리뷰 : false 처리 ****************************//
-			if (!PlayerController->IsLocalController())
+			if (false == PlayerController->IsLocalController())
 			{
 				ADSArmedCharacter* OtherPlayer = Cast<ADSArmedCharacter>(PlayerController->GetPawn());
 				if (IsValid(OtherPlayer))
@@ -187,14 +174,11 @@ void ADSArmedCharacter::ServerRPC_EquipWeapon_Implementation(EWeaponEquipState E
 	}
 }
 
-void ADSArmedCharacter::ClientRPC_EquipWeapon_Implementation(ADSArmedCharacter* Character, EWeaponEquipState EquipState)
+void ADSArmedCharacter::ClientRPC_EquipWeapon_Implementation(ADSArmedCharacter* Character, EWeaponState EquipState)
 {
 	if (IsValid(Character))
 	{
-		if (EquipMontages.Contains(EquipState))
-		{
-			Character->PlayAnimMontage(EquipMontages[EquipState]);
-		}
+		Character->PlayAnimation(EquipState);
 	}
 }
 

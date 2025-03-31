@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 // Default
 #include "CoreMinimal.h"
 
 // UE
 #include "Engine/DataAsset.h"
-#include "System/DSEnums.h"
+#include "GameData/DSEnums.h"
 
 // Game
 

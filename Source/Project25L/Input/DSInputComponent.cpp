@@ -5,7 +5,6 @@
 #include "EnhancedInputComponent.h"
 
 // Game
-#include "DSLogChannels.h"
 
 UDSInputComponent::UDSInputComponent(const FObjectInitializer& ObjectInitializer)
 {
@@ -16,7 +15,8 @@ TArray<FEnhancedInputActionEventBinding*> UDSInputComponent::FindActionEventBind
 {
 	TArray<FEnhancedInputActionEventBinding*> MatchingBindings;
 
-	if (!InputAction)
+
+	if (IsValid(InputAction))
 	{
 		return MatchingBindings;
 	}
@@ -38,7 +38,7 @@ void UDSInputComponent::RemoveBinds(const UInputAction* InputAction)
 
 	for (FEnhancedInputActionEventBinding* Binding : Bindings)
 	{
-		if (Binding)
+		if (nullptr == Binding)
 		{
 			RemoveBindingByHandle(Binding->GetHandle());
 		}

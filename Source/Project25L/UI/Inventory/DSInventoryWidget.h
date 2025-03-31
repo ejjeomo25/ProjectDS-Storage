@@ -9,9 +9,6 @@
 // UHT
 #include "DSInventoryWidget.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROJECT25L_API UDSInventoryWidget : public UUserWidget
 {

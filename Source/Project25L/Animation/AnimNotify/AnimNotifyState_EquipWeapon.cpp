@@ -9,7 +9,10 @@ void UAnimNotifyState_EquipWeapon::NotifyBegin(USkeletalMeshComponent* MeshComp,
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 
-	//*****************코드 리뷰 : MeshComp 널체크  ****************************//
+	if (false == IsValid(MeshComp))
+	{
+		return;
+	}
 
 	ADSArmedCharacter* Character = Cast<ADSArmedCharacter>(MeshComp->GetOwner());
 
