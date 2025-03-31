@@ -20,8 +20,11 @@ protected:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
+
+	//*****************코드 리뷰 : Transient 변경  ****************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	TObjectPtr<class ADSWeapon> Owner;
-	
+
+	//*****************코드 리뷰 : uint8 변경  ****************************//
 	bool bIsFire;
 };

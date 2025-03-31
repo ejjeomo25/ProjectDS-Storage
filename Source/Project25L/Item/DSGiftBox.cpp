@@ -57,19 +57,16 @@ void ADSGiftBox::OnComponentBeginOverlap_Child(UPrimitiveComponent* OverlappedCo
 	{
 		return;
 	}
-	// 이 변수를 활용할 수 있을까?
-	// if (Character->bIsShowGiftBox)
-	{
-		UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
-		check(UIManager);
-		
-		ItemListWidget = Cast<UDSItemList>(UIManager->PushContentToLayer(PlayerController, ListWidgetTag, ListWidget));
 
-		if (IsValid(ItemListWidget))
-		{
-			DSEVENT_DELEGATE_BIND(OnUpdateItemWidget, ItemListWidget, &UDSItemList::AddItems);
-			DSEVENT_DELEGATE_BIND(OnRemoveItemWidget, ItemListWidget, &UDSItemList::RemoveItem);
-		}
+	UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
+	check(UIManager);
+
+	ItemListWidget = Cast<UDSItemList>(UIManager->PushContentToLayer(ListWidgetTag));
+
+	if (IsValid(ItemListWidget))
+	{
+		DSEVENT_DELEGATE_BIND(OnUpdateItemWidget, ItemListWidget, &UDSItemList::AddItems);
+		DSEVENT_DELEGATE_BIND(OnRemoveItemWidget, ItemListWidget, &UDSItemList::RemoveItem);
 	}
 	
 	SetOwner(PlayerController);
@@ -83,23 +80,17 @@ void ADSGiftBox::OnComponentEndOverlap_Child(UPrimitiveComponent* OverlappedComp
 	{
 		return;
 	}
-	APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
-	if (!IsValid(PlayerController))
-	{
-		return;
-	}
 
 	//UI 띄우는 작업이 사라짐
 	UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
 
 	check(UIManager);
 
-	UIManager->PopContentToLayer(PlayerController, ListWidgetTag);
+	UIManager->PopContentToLayer(ListWidgetTag);
 
 	DSEVENT_DELEGATE_REMOVE(OnUpdateItemWidget, ItemListWidget);
 	DSEVENT_DELEGATE_REMOVE(OnRemoveItemWidget, ItemListWidget);
 	ItemListWidget = nullptr;
-	Character->bIsShowGiftBox = false;
 	SetOwner(nullptr);
 }
 

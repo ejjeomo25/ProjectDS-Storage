@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 // Default
@@ -7,6 +5,9 @@
 
 // UE
 #include "Engine/DataTable.h"
+
+// Game
+#include "System/DSEnums.h"
 
 // UHT
 #include "DSSkillAttribute.generated.h"
@@ -22,10 +23,15 @@ GENERATED_USTRUCT_BODY()
 
 public:
 	FDSSkillAttribute() :
-		MaxCooltime(0.0f) { }
-	// FDSSkillAttribute(float NewMaxCooltime) :
-	// 	MaxCooltime(NewMaxCooltime) { }
+		MaxCooltime(0.0f)
+		, AutoAimAngle(0.0f)
+	{ }
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SkillAttribute)
 	float MaxCooltime;
+
+	/*오토 타겟팅용 각도를 의미*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SkillAttribute)
+	float AutoAimAngle;
+
 };

@@ -1,8 +1,7 @@
-﻿//Default
+//Default
 #include "Skill/DSSkillControlComponent.h"
 
 //UE
-#include "Net/UnrealNetwork.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -51,7 +50,7 @@ void UDSSkillControlComponent::InitializeComponent()
 	SkillActorInfo = MakeShared<FDSSkillActorInfo>();
 
 	AActor* Owner = GetOwner();
-	InitSkillActorInfo(Owner, Owner);
+	// InitSkillActorInfo(Owner, Owner);
 }
 
 void UDSSkillControlComponent::OnRegister()
@@ -61,18 +60,17 @@ void UDSSkillControlComponent::OnRegister()
 	ActivatableSkills.RegisterWithOwner(this);
 }
 
-void UDSSkillControlComponent::OnUnregister()
+void UDSSkillControlComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseLSkill], this);
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseLHoldSkill], this);
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseRSkill], this);
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::Skill1], this);
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::Skill2], this);
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::FarmingSkill], this);
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::UltimateSkill], this);
-	DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::FlightSkill], this);
+	Super::EndPlay(EndPlayReason);
 
-	Super::OnUnregister();
+	// DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseLSkill], this);
+	// DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseLHoldSkill], this);
+	// DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::MouseRSkill], this);
+	// DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::Skill1], this);
+	// DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::Skill2], this);
+	// DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::FarmingSkill], this);
+	// DSEVENT_DELEGATE_REMOVE(OnSkillPressedEvents[ESkillType::UltimateSkill], this);
 }
 
 // ---------------------------------------------------------- FindSkillSpec ----------------------------------------------------------
@@ -1298,7 +1296,6 @@ void UDSSkillControlComponent::InitSkillActorInfo(AActor* InOwnerActor, AActor* 
 	OnSkillPressedEvents.Add(ESkillType::Skill2, FOnSkillPressed());
 	OnSkillPressedEvents.Add(ESkillType::FarmingSkill, FOnSkillPressed());
 	OnSkillPressedEvents.Add(ESkillType::UltimateSkill, FOnSkillPressed());
-	OnSkillPressedEvents.Add(ESkillType::FlightSkill, FOnSkillPressed());
 
 }
 

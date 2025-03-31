@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 //Default
 #include "CoreMinimal.h"
@@ -8,7 +8,10 @@
 #include "Engine/NetSerialization.h"
 #include "Net/Serialization/FastArraySerializer.h"
 
-//Game
+// Game
+#include "System/DSEnums.h"
+
+// UHT
 #include "DSSkillSpec.generated.h"
 
 class UDSSkillBase;
@@ -90,6 +93,10 @@ struct PROJECT25L_API FDSSkillSpec : public FFastArraySerializerItem
 	UPROPERTY()
 	TObjectPtr<UDSSkillBase> Skill;
 	
+	/** Skill Type*/
+	UPROPERTY()
+	ESkillType SkillType;
+
 	/** InputID, if bound */
 	UPROPERTY()
 	int32	InputID;

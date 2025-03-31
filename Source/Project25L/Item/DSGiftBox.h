@@ -55,6 +55,5 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Widget)
 	FGameplayTag  ListWidgetTag;
 
-	UPROPERTY(EditAnywhere, Category = Widget)
-	TSoftClassPtr<UUserWidget> ListWidget;
+
 };

@@ -5,10 +5,11 @@
 UENUM(BlueprintType)
 enum class EFlightState : uint8
 {
+	Locked,	// 쿨다운 중이거나 아직 포션을 얻지 못함
 	None,
 	Begin,
 	Idle,
-	Hovering,
+	Hovering,	// 정지상태
 	Boost,
 	Up,
 	Down,
@@ -26,6 +27,7 @@ enum class EInputMappingContextType : uint8
 UENUM(BlueprintType)
 enum class ECharacterType : uint8
 {
+	None,
     Girl,
     Boy,
     Mister,
@@ -36,7 +38,9 @@ enum class EDataTableType : uint8
 {
     CharacterData,
 	NonCharacterData,
-	SkillAttributeData,
+	GirlSkillAttributeData,
+	BoySkillAttributeData,
+	MisterSkillAttributeData,
 	ItemData,
 	ItemVehicleData,
 	ItemPotionData,
@@ -86,6 +90,7 @@ enum class EWidgetType : uint8
 UENUM(BlueprintType)
 enum class ESkillType : uint8
 {
+	None,
 	Skill1,						//QSkill,
 	Skill2,						//ESKill,
 	FarmingSkill,			// RSkill,
@@ -93,8 +98,6 @@ enum class ESkillType : uint8
 	MouseLSkill, 			//MouseLSkill,
 	MouseLHoldSkill, 		//MouseLHoldSkill,
 	MouseRSkill,			//MouseRSkill,
-
-	FlightSkill,			// FlightSkill,
 };
 
 /**

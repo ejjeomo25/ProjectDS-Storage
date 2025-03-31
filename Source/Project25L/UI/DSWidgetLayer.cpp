@@ -7,26 +7,34 @@
 // Game
 #include "DSLogChannels.h"
 
-UUserWidget* UDSWidgetLayer::PushWidget(TSoftClassPtr<UUserWidget> WidgetClass)
+UUserWidget* UDSWidgetLayer::PushWidget(FGameplayTag WidgetTag)
 {
-	if (!WidgetClass)
+	DS_LOG(DSUILog, Log, TEXT("UDSWidgetLayer::PushWidget %s"), *WidgetTag.ToString());
+	UUserWidget* NewWidget = nullptr;
+
+	// 이미 생성된 위젯이 있는지 확인
+	if (CreatedWidgetsMap.Contains(WidgetTag))
 	{
-		return nullptr;
+		NewWidget = CreatedWidgetsMap[WidgetTag];
 	}
-
-
-	// 동기적으로 로드
-	UClass* LoadedWidgetClass = WidgetClass.LoadSynchronous();
-	if (!LoadedWidgetClass) 
+	else
 	{
-		return nullptr;
-	}
+		TSoftClassPtr<UUserWidget> WidgetClass = FindWidget(WidgetTag);
 
-	// UUserWidget 클래스로 캐스팅
-	UUserWidget* NewWidget = CreateWidget<UUserWidget>(GetOwningPlayer(), LoadedWidgetClass);
-	if (!NewWidget) 
-	{
-		return nullptr;
+		UClass* LoadedClass = WidgetClass.Get();
+		if (!IsValid(LoadedClass))
+		{
+			LoadedClass = WidgetClass.LoadSynchronous();
+		}
+
+		NewWidget = CreateWidget<UUserWidget>(GetOwningPlayer(), LoadedClass);
+		if (!NewWidget)
+		{
+			return nullptr;
+		}
+
+		// 생성한 위젯 저장
+		CreatedWidgetsMap.Add(WidgetTag, NewWidget);
 	}
 
 	CollapseTopWidget();
@@ -34,16 +42,37 @@ UUserWidget* UDSWidgetLayer::PushWidget(TSoftClassPtr<UUserWidget> WidgetClass)
 	if (Border)
 	{
 		Border->ClearChildren();
+		Border->AddChild(NewWidget);
 	}
 
 	Stack.Add(NewWidget);
 
-	Border->AddChild(NewWidget);
+	
 
 	ShowTopWidget();
 	return NewWidget;
 
+}
 
+TSoftClassPtr<UUserWidget> UDSWidgetLayer::FindWidget(FGameplayTag WidgetTag)
+{
+	// TSoftClassPtr<UUserWidget> FoundWidget = *WidgetsMap.Find(WidgetTag);
+	// if (FoundWidget)
+	// {
+	// 	return FoundWidget;
+	// }
+	// 
+	for (const auto& Pair : WidgetsMap)
+	{
+		if (WidgetTag.MatchesTagExact(Pair.Key))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("FindWidget: Tag matched manually: %s"), *Pair.Key.ToString());
+			return Pair.Value;
+		}
+	}
+
+
+	return nullptr;
 }
 
 void UDSWidgetLayer::PopWidget()
@@ -54,10 +83,11 @@ void UDSWidgetLayer::PopWidget()
 
 	if (IsValid(TopWidget))
 	{
-		TopWidget->RemoveFromParent();
+		TopWidget->SetVisibility(ESlateVisibility::Collapsed);
 		Stack.RemoveAt(Stack.Num() - 1);
-		Border->ClearChildren();
+
 	}
+	Border->ClearChildren();
 
 	UUserWidget* NewTopWidget = GetTopWidget();
 	if (IsValid(NewTopWidget))
@@ -121,7 +151,7 @@ UUserWidget* UDSWidgetLayer::GetTopWidget()
 
 void UDSWidgetLayer::NativeConstruct()
 {
-	DS_LOG(DSUILog, Log, TEXT("UDSWidgetLayer::NativeConstruct()"));
+	Super::NativeConstruct();
 }
 
 

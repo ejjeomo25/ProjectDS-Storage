@@ -32,9 +32,8 @@ protected:
 
 	//초기화하는 용도로, SkillControl/Stat/Mesh 등 초기화 할 함수이다.
 	virtual void Initialize();
-
-	//void PlayEffect(TSubclassOf)
 protected:
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SkillControl")
 	TObjectPtr<UDSSkillControlComponent> SkillControlComponent;

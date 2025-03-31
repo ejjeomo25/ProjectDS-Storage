@@ -1,12 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
+
 #include "CoreMinimal.h"
+// UE
 #include "UObject/Interface.h"
+
+// Game
+#include "System/DSEnums.h"
+
+// UHT
 #include "DSSkillLifeCycle.generated.h"
 
-// This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UDSSkillLifeCycle : public UInterface
 {
@@ -35,7 +39,7 @@ public:
     virtual UDSSkillControlComponent* GetSkillControlComponent() const PURE_VIRTUAL(IDSSkillLifeCycle::GetSkillControlComponent, return nullptr;);
 
     /** 스킬 초기화 시 호출 */
-    virtual void OnSkillInitialized() {}
+    virtual void OnSkillInitialized(ESkillType SkillType) {}
 
     /** 스킬 활성화 시 호출 */
     virtual void OnSkillActivated() {}

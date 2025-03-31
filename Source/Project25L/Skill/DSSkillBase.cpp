@@ -1,4 +1,4 @@
-﻿// Default
+// Default
 #include "Skill/DSSkillBase.h"
 
 // UE
@@ -12,6 +12,7 @@
 
 #include "GameData/DSGameDataSubsystem.h"
 #include "GameData/Skill/DSSkillAttribute.h"
+#include "Player/DSPlayerController.h"
 
 UDSSkillBase::UDSSkillBase()
 : ReplicationPolicy(ESkillReplicationPolicy::ReplicateYes), InstancingPolicy(ESkillInstancingPolicy::InstancedPerActor), NetExecutionPolicy(ESkillNetExecutionPolicy::ServerInitiated),
@@ -40,20 +41,18 @@ void UDSSkillBase::NotifyAvatarDestroyed()
 // 스킬이 SkillControlComponent에 등록될 때 호출됨
 void UDSSkillBase::OnAddSkill(const FDSSkillActorInfo* ActorInfo, const FDSSkillSpec& Spec)
 {
-	
-	// UE_LOG(LogTemp, Log, TEXT("Skill %s added. Spec: %s"), *GetName(), *Spec.GetDebugString());
 	// ActorInfo가 유효하다면 캐시
 	if (ActorInfo)
 	{
 		SetCurrentActorInfo(Spec.Handle, ActorInfo);
 
-		OnSkillInitialized();
+		OnSkillInitialized(Spec.SkillType);
 	}
 }
 
 void UDSSkillBase::OnRemoveSkill(const FDSSkillActorInfo* ActorInfo, const FDSSkillSpec& Spec)
 {
-	DS_LOG(DSSkillLog, Warning, TEXT("OnRemoveSkill"));
+	// DS_LOG(DSSkillLog, Warning, TEXT("OnRemoveSkill"));
 }
 
 void UDSSkillBase::OnAvatarSet(const FDSSkillActorInfo* ActorInfo, const FDSSkillSpec& Spec)
@@ -106,6 +105,8 @@ void UDSSkillBase::SetCurrentActorInfo(const FDSSkillSpecHandle Handle, const FD
 		CurrentActorInfo = ActorInfo;
 		CurrentSpecHandle = Handle;
 	}
+	CurrentActorInfo = ActorInfo;
+	CurrentSpecHandle = Handle;
 }
 
 AActor* UDSSkillBase::GetSkillOwner() const
@@ -127,35 +128,34 @@ UDSSkillControlComponent* UDSSkillBase::GetSkillControlComponent() const
 
 
 // -------------------------------------- ISkillLifeCycle --------------------------------------
-void UDSSkillBase::OnSkillInitialized()
+void UDSSkillBase::OnSkillInitialized(ESkillType SkillType)
 {
-	if (nullptr == CurrentActorInfo)
+	const FDSSkillActorInfo *ActorInfo = GetCurrentActorInfo();
+
+	if (nullptr == ActorInfo)
 	{
 		return;
 	}
 
-	if(false == IsValid(GetCurrentActorInfo()->SkillOwner.Get()))
-	{
-		return;
-	}
+	ADSPlayerController* PlayerController = Cast<ADSPlayerController>(ActorInfo->PlayerController.Get());
 
-	if (UWorld * OwnerWorld = GetCurrentActorInfo()->SkillOwner->GetWorld())
+
+	if (IsValid(PlayerController))
 	{
-		UDSGameDataSubsystem* DataSubsystem = UDSGameDataSubsystem::Get(OwnerWorld);
-	
-		check(DataSubsystem);
-	
-		if (UDataTable* TmpData = DataSubsystem->GetDataTable(EDataTableType::SkillAttributeData))
+		ECharacterType CharacterType = PlayerController->GetCharacterType();
+
+		//데이터 테이블을 사용해서, 현재 스킬에 대해 캐릭터의 AutoAimAngle 값을 가지고 온다.
+		EDataTableType DataTableType = UDSGameDataSubsystem::ConvertToDataTableType(CharacterType);
+
+		UDSGameDataSubsystem* DataManager = UDSGameDataSubsystem::Get(PlayerController);
+		check(DataManager);
+
+		FDSSkillAttribute* SkillData = DataManager->GetDataRowByEnum<FDSSkillAttribute, ESkillType>(DataTableType, SkillType);
+
+		if (nullptr != SkillData)
 		{
-			if (IsValid(TmpData))
-			{
-				if (FDSSkillAttribute* Row = TmpData->FindRow<FDSSkillAttribute>(SkillName, SkillName.ToString()))
-				{
-					MaxCooltime = Row->MaxCooltime;
-					DS_LOG(DSSkillLog, Warning, TEXT("[%s] - MaxCooltime : [%f]"),*SkillName.ToString(), MaxCooltime);
-
-				}
-			}
+			MaxCooltime = SkillData->MaxCooltime;
+			AutoAimAngle = SkillData->AutoAimAngle;
 		}
 	}
 }

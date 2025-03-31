@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "Gimmick/DSDungeonMat.h"
 
 // UE
@@ -63,7 +63,7 @@ void ADSDungeonMat::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedCompo
 		if (Character->HasAuthority())
 		{
 			//UI를 띄운다.
-			Character->ServerRPC_ReadyPlayer(OverlappedPlayers.Num());
+			Character->ServerRPC_ReadyPlayer(OverlappedPlayers.Num(), ReadyPlayerWidgetTag);
 		}
 
 		UWorld* World = GetWorld();
@@ -105,7 +105,7 @@ void ADSDungeonMat::OnComponentEndOverlap(UPrimitiveComponent* OverlappedCompone
 		if (Character->HasAuthority())
 		{
 			//비어있으면, 모든 플레이어가 나갔기 때문에 UI를 없앤다.
-			Character->ServerRPC_ReadyPlayer(OverlappedPlayers.Num());
+			Character->ServerRPC_ReadyPlayer(OverlappedPlayers.Num(), ReadyPlayerWidgetTag);
 			DS_NETLOG(DSNetLog, Log, TEXT("Last Overlap!"));
 		}
 	}

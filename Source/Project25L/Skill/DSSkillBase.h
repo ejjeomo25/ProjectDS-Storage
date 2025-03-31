@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -198,7 +198,7 @@ protected:
 	virtual UDSSkillControlComponent* GetSkillControlComponent() const override;
 
 	/** 스킬 초기화 시 호출 */
-	virtual void OnSkillInitialized() override;
+	virtual void OnSkillInitialized(ESkillType SkillType) override;
 
 	/** 스킬 활성화 시 호출 */
 	virtual void OnSkillActivated() override;
@@ -281,6 +281,8 @@ protected:
 /////////////////////////////////////////////////////// SkillSpec ///////////////////////////////////////////////////////
 	UPROPERTY(EditAnywhere, Category ="Cooltime")
 	float MaxCooltime = 100.f;
+	UPROPERTY(Transient)
+	float AutoAimAngle;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Cooltime")

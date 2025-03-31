@@ -82,7 +82,7 @@ void UDSInputComponent::BindTripleActions(const UDSInputConfig* InputConfig, con
 		}
 		if (HeldFunc)
 		{
-			BindAction(IA, ETriggerEvent::Ongoing, Object, HeldFunc);
+			BindAction(IA, ETriggerEvent::Triggered, Object, HeldFunc);
 		}
 		if (ReleasedFunc)
 		{

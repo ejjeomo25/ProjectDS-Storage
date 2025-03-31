@@ -41,13 +41,15 @@ class PROJECT25L_API UDSCharacterMovementComponent : public UCharacterMovementCo
 public:
 	UDSCharacterMovementComponent();
 	void SetSpeedCommand(ESpeedType TartgetSpeed);
+	virtual bool IsMovingOnGround() const override;
+	bool CanLand() const;
 
 protected:
 	virtual class FNetworkPredictionData_Client* GetPredictionData_Client() const override;
 	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;
 	virtual float GetMaxSpeed() const override;
 	virtual void UpdateFromCompressedFlags(uint8 Flags);
-
+	void ApplyFloatingEffect(float DeltaSeconds);
 
 public:
 	uint8 bChangeSpeed : 1;
@@ -56,5 +58,10 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Settings")
 	TMap<ESpeedType, float> SpeedMode;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Settings")
+	TMap<ESpeedType, float> FlightSpeedMode;
+
+	float GroundCheckThreshold = 70.f;
 
 };

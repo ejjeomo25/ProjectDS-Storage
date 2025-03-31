@@ -1,15 +1,19 @@
-﻿//Default
+//Default
 #include "Character/DSCharacter.h"
 
 //UE
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameplayTagContainer.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 //Game
 #include "DSCharacterMovementComponent.h"
+#include "DSFlightComponent.h"
 #include "DSLogChannels.h"
 #include "GameData/Items/DSItemData.h"
+#include "HUD/DSHUD.h"
+#include "Input/DSPlayerInputComponent.h"
 #include "Inventory/DSInventoryComponent.h"
 #include "Item/DSGiftBox.h"
 #include "Item/DSItemActor.h"
@@ -20,7 +24,6 @@
 #include "System/DSGameUtils.h"
 #include "System/DSUIManagerSubsystem.h"
 #include "UI/HUB/DSReadyPlayersWidget.h"
-#include "HUD/DSHUD.h"
 
 ADSCharacter::ADSCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UDSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
@@ -38,10 +41,13 @@ ADSCharacter::ADSCharacter(const FObjectInitializer& ObjectInitializer)
 	Camera->bUsePawnControlRotation = false;
 	CameraSpringArm->bUsePawnControlRotation = true;
 
+
+	//*****************코드 리뷰 : 초기화 리스트 ****************************//
 	bIsCrouched = true;
-	bIsShowGiftBox = false;
 
 	InventoryComponent = CreateDefaultSubobject<UDSInventoryComponent>(TEXT("InventoryComponent"));
+	DSPlayerInputComponent = CreateDefaultSubobject<UDSPlayerInputComponent>(TEXT("DSPlayerInputComponent"));
+	FlightComponent = CreateDefaultSubobject<UDSFlightComponent>(TEXT("FlightComponent"));
 
 	SetJumpHeight(false);
 }
@@ -62,12 +68,19 @@ FVector ADSCharacter::GetCameraForwardVector()
 	return  Camera->GetForwardVector();
 }
 
+//*****************코드 리뷰 : 헤더로 이동 ****************************//
 float ADSCharacter::GetFOV()
 {
 	return FOV;
 }
 
-void ADSCharacter::ServerRPC_ReadyPlayer_Implementation(int32 PlayerCount)
+float ADSCharacter::GetInputThreshold()
+{
+	//아저씨의 경우 알아서 정의해서 여기서 리턴.
+	return 0.0f;
+}
+
+void ADSCharacter::ServerRPC_ReadyPlayer_Implementation(int32 PlayerCount, FGameplayTag ReadyPlayerWidgetTag)
 {
 	//모든 클라이언트를 가져온다.
 	UWorld* World = GetWorld();
@@ -83,56 +96,51 @@ void ADSCharacter::ServerRPC_ReadyPlayer_Implementation(int32 PlayerCount)
 
 			if (IsValid(Character))
 			{
-				Character->ClientRPC_ReadyPlayer(PlayerCount);
+				Character->ClientRPC_ReadyPlayer(PlayerCount, ReadyPlayerWidgetTag);
 			}
 		}
 	}
 
 }
 
-void ADSCharacter::ClientRPC_ReadyPlayer_Implementation(int32 PlayerCount)
+void ADSCharacter::ClientRPC_ReadyPlayer_Implementation(int32 PlayerCount, FGameplayTag ReadyPlayerWidgetTag)
 {
 	if (IsLocallyControlled())
 	{
-
-		ADSPlayerController* PlayerController = Cast<ADSPlayerController>(GetController());
-
-		if (IsValid(PlayerController) == false)
-		{
-			return;
-		}
-
 		if (PlayerCount <= 1)
 		{
 			// 기믹의 상태가 변경되었음을 전달
 			UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
 			check(UIManager);
 
-			TSoftClassPtr<UUserWidget>* Widget = WidgetMap.Find(ReadyPlayerWidgetTag);
 
 			// 한명일 때
 			if (PlayerCount==1)
 			{
 				//true로 변경되어질 때 UI를 띄운다.
-				UIManager->PushContentToLayer(PlayerController, ReadyPlayerWidgetTag, *Widget);
+				UIManager->PushContentToLayer(ReadyPlayerWidgetTag);
 			}
 			else
 			{
 				//false로 변경되어 질때 UI를 없앤다.
-				UIManager->PopContentToLayer(PlayerController, ReadyPlayerWidgetTag);
+				UIManager->PopContentToLayer(ReadyPlayerWidgetTag);
 			}
 		}
 		else
 		{
 			//플레이어가 n명일 때
-
-
+			UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
+			check(UIManager);
 		}
 
 	}
 }
+
+//Cheat 
 void ADSCharacter::ServerRPC_UseItem_Implementation(int32 ItemID, int32 ItemCount)
 {
+
+	//*****************코드 리뷰 : Valid 체크 ****************************//
 	for (int ItemIdx = 0; ItemIdx < ItemCount; ItemIdx++)
 	{
 		InventoryComponent->UseItem(ItemID);
@@ -141,6 +149,8 @@ void ADSCharacter::ServerRPC_UseItem_Implementation(int32 ItemID, int32 ItemCoun
 
 void ADSCharacter::ServerRPC_PrintItem_Implementation()
 {
+
+	//*****************코드 리뷰 : Valid 체크 ****************************//
 	InventoryComponent->PrintItem();
 }
 
@@ -160,6 +170,8 @@ void ADSCharacter::TryInteraction()
 
 	if (Result)
 	{
+
+		//*****************코드 리뷰 : GameUtils 파일로 빼서 사용 => static 함수, auto target ****************************//
 		ADSItemActor* SurroundingItem = nullptr;
 		for (AActor* Actor : OutActors)
 		{
@@ -214,6 +226,8 @@ void ADSCharacter::TryPickupItem(int32 ItemIdx)
 			InventoryComponent->StoreItems(nullptr, ItemInfo.ID, 1);
 
 			HeldItem->ServerRPC_RemoveItemData(ItemIdx);
+
+			//DSEVENT_DELEGATE_INVOKE(GameUI.OnUpdateChestWidget, ItemData);
 		}
 	}
 }
@@ -243,10 +257,8 @@ void ADSCharacter::SelectedItem(AActor* Interactor)
 	{
 		HeldItem = SurroundingItem;
 		
-		TArray<FDSItemInfo> ItemInfo = SurroundingItem->GetItemData();
-		bIsShowGiftBox = true;
-
-		DSEVENT_DELEGATE_INVOKE(HeldItem->OnUpdateItemWidget, ItemInfo);
+		// TArray<FDSItemInfo> ItemInfo = SurroundingItem->GetItemData();
+		// DSEVENT_DELEGATE_INVOKE(GameUI.OnUpdateChestWidget, ItemInfo);
 	}
 }
 
@@ -259,7 +271,17 @@ float ADSCharacter::TakeFinalDamage(float DamageAmount, const FDSDamageEvent& Ne
 	return Super::TakeDamage(DamageAmount, NewDamageEvent, EventInstigator, DamageCauser);
 }
 
+void ADSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	if (IsLocallyControlled())
+	{
+		DSPlayerInputComponent->SetupInputComponent(InputComponent);
+	}
+}
+
+//*****************코드 리뷰 : RPC해줘야 함. ****************************//
 void ADSCharacter::SetJumpHeight(uint8  bIsRun)
 {
 	const float Gravity = 980.0f;

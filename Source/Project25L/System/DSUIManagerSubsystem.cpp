@@ -10,15 +10,11 @@
 #include "UI/DSWidgetLayer.h"
 #include "System/DSGameInstance.h"
 #include "Player/DSPlayerController.h"
+#include "UI/DSPrimaryLayout.h"
 
 UDSUIManagerSubsystem::UDSUIManagerSubsystem():Super()
 {
-	// test -> 게임데이터 에셋으로 넣기 
-	FString WidgetPath = "/Game/UI/Item/WBP_ItemList.WBP_ItemList_C";
-	FSoftClassPath SoftClassPath(WidgetPath);
-	TSoftClassPtr<UUserWidget> WidgetPtr(SoftClassPath);
-	FGameplayTag LayerTag = FGameplayTag::RequestGameplayTag("UI.Layer.Modal");
-	WidgetMap.Add(LayerTag, WidgetPtr);
+	
 }
 
 UDSUIManagerSubsystem* UDSUIManagerSubsystem::Get(UObject* Object)
@@ -34,60 +30,27 @@ UDSUIManagerSubsystem* UDSUIManagerSubsystem::Get(UObject* Object)
 	return GameInstance->GetSubsystem<UDSUIManagerSubsystem>();
 }
 
-bool UDSUIManagerSubsystem::RegisterLayer(const APlayerController* PlayerController, FGameplayTag LayerName, UDSWidgetLayer* LayerWidget)
+
+
+UUserWidget* UDSUIManagerSubsystem::PushContentToLayer(FGameplayTag LayerName)
 {
-	if (!PlayerController) return false;
+	UUserWidget* NewWidget = PrimaryWidget->PushContentToLayer(LayerName);
 
-	ADSHUD* HUD = Cast<ADSHUD>(PlayerController->GetHUD());
-	if (HUD)
+	if (NewWidget)
 	{
-		return HUD->RegisterLayer(LayerName, LayerWidget);
-	}
-
-	return false;
-}
-
-UUserWidget* UDSUIManagerSubsystem::PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName, TSoftClassPtr<UUserWidget> WidgetClass)
-{
-	
-	DS_LOG(DSUILog, Log, TEXT("UDSUIManagerSubsystem::PushContentToLayer"));
-	if (IsValid(PlayerController))
-	{
-		DS_LOG(DSUILog, Log, TEXT("UDSUIManagerSubsystem::PushContentToLayer :: PlayerController"));
-
-		AHUD* HUD = PlayerController->GetHUD();
-		if (IsValid(HUD))
-		{
-			DS_LOG(DSUILog, Log, TEXT("UDSUIManagerSubsystem::PushContentToLayer :: HUD"));
-
-			ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
-			return DSHUD->PushContentToLayer(LayerName, WidgetClass);
-		}
+		return NewWidget;
 	}
 	return nullptr;
 }
 
-void UDSUIManagerSubsystem::PopContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName)
+void UDSUIManagerSubsystem::PopContentToLayer(FGameplayTag LayerName)
 {
-	if (IsValid(PlayerController))
-	{
-		AHUD* HUD = PlayerController->GetHUD();
-		if (IsValid(HUD))
-		{
-			ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
-			DSHUD->PopContentfromLayer(LayerName);
-		}
-	}
+	PrimaryWidget->PopContentfromLayer(LayerName);
 }
 
-void UDSUIManagerSubsystem::ClearLayer(const APlayerController* PlayerController, FGameplayTag LayerName)
+void UDSUIManagerSubsystem::ClearLayer(FGameplayTag LayerName)
 {
-	AHUD* HUD = PlayerController->GetHUD();
-	if (IsValid(HUD))
-	{
-		ADSHUD* DSHUD = Cast<ADSHUD>(HUD);
-		DSHUD->ClearLayer(LayerName);
-	}
+	PrimaryWidget->ClearLayer(LayerName);
 }
 
 void UDSUIManagerSubsystem::FocusGame(APlayerController* PlayerController)
@@ -102,32 +65,13 @@ void UDSUIManagerSubsystem::FocusModal(APlayerController* PlayerController)
 	DSPlayerController->SetUIFocusMode();
 }
 
-UUserWidget* UDSUIManagerSubsystem::PushContentToLayer(const APlayerController* PlayerController, FGameplayTag LayerName)
+bool UDSUIManagerSubsystem::RegisterWidget(UDSPrimaryLayout* Widget)
 {
-	// if (!PlayerController)
-	// {
-	//     UE_LOG(LogTemp, Warning, TEXT("PushContentToLayer: PlayerController is nullptr!"));
-	//     return nullptr;
-	// }
-	// 
-	// FGameplayTag LayerTag = FGameplayTag::RequestGameplayTag(LayerName);
-	// 
-	// if (WidgetMap.Contains(LayerTag))
-	// {
-	//     // TSoftClassPtr<UUserWidget> 가져오기
-	//     TSoftClassPtr<UUserWidget> WidgetPtr = WidgetMap[LayerTag];
-	// 
-	//     // 클래스가 로드되어 있는지 확인
-	//     if (false == WidgetPtr.IsValid())
-	//     {
-	// 		UE_LOG(LogTemp, Warning, TEXT("PushContentToLayer: here!!!!"));
-	// 		return PushContentToLayer(PlayerController, LayerName, WidgetPtr.LoadSynchronous());
-	//     }
-	// 	else
-	// 	{
-	// 		return PushContentToLayer(PlayerController, LayerName, WidgetPtr.Get());
-	// 	}
-	// }
-	// 
-	return nullptr;
+	if (false == IsValid(PrimaryWidget) && IsValid(Widget))
+	{
+		PrimaryWidget = Widget;
+		return true;
+	}
+	return false;
 }
+

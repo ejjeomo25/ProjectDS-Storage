@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "UI/DSItemList.h"
 
 // UE
@@ -85,19 +85,11 @@ void UDSItemList::RemoveItem(int32 IndexToRemove)
 
 		if (MaxNum == 0)
 		{
-			APlayerController* PlayerController = GetOwningPlayer();
-
-			if (IsValid(PlayerController) == false)
-			{
-				return;
-			}
 
 			//위젯 자체가 꺼진다.
 			UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
-
 			check(UIManager);
-
-			UIManager->PopContentToLayer(PlayerController, FGameplayTag::RequestGameplayTag(FName("UI.Layer.Modal")));
+			// UIManager->PopContentToLayer(FGameplayTag::RequestGameplayTag(FName("UI.Layer.Modal.GitfBox")));
 		}
 		else
 		{

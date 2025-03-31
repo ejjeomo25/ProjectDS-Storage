@@ -1,4 +1,4 @@
-﻿//Default
+//Default
 #include "Character/DSCharacterBase.h"
 
 //UE
@@ -8,7 +8,6 @@
 
 //Game
 #include "DSLogChannels.h"
-
 #include "Skill/DSSkillControlComponent.h"
 #include "Stat/DSStatComponent.h"
 #include "System/DSEventSystems.h"
@@ -46,19 +45,11 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	{
 		GetMesh()->SetSkeletalMesh(SkeletalMeshRef.Object);
 	}
-
-	//Default AnimInstance
-	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Characters/Mannequins/Animations/ABP_Manny.ABP_Manny_C"));
-
-	if (AnimInstanceRef.Class)
-	{
-		GetMesh()->SetAnimClass(AnimInstanceRef.Class);
-	}
 	/*데이터 테이블로 변환 예정*/
 
-	// SkillControlComponent = CreateDefaultSubobject<UDSSkillControlComponent>(TEXT("SkillControlComponent"));
-	StatComponent = CreateDefaultSubobject<UDSStatComponent>(TEXT("StatComponent"));
 
+
+	StatComponent = CreateDefaultSubobject<UDSStatComponent>(TEXT("StatComponent"));
 }
 
 
@@ -94,6 +85,7 @@ void ADSCharacterBase::Initialize()
 {
 	TSoftObjectPtr<USkeletalMesh> SkeletalMesh; //실제론 데이터를 받도록 한다.
 	
+	//*****************코드 리뷰 : 전역으로 대체 ****************************//
 	FStreamableManager StreamableManager;
 	StreamableManager.RequestAsyncLoad(SkeletalMesh.ToSoftObjectPath(), FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSCharacterBase>(this), SkeletalMesh]()
 		{

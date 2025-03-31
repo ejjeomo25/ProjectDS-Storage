@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 // Default
 #include "CoreMinimal.h"
 
@@ -30,9 +30,13 @@ class PROJECT25L_API UDSGameDataSubsystem final : public UGameInstanceSubsystem
 public:
 	UDSGameDataSubsystem();
 
+	
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
- 
+ 	static UDSGameDataSubsystem* Get(UObject* WorldContextObject);
+	// 캐릭터 타입을 전달하면, 관련된 데이터 테이블 타입을 전달합니다.
+	static EDataTableType ConvertToDataTableType(ECharacterType CharacterType);
+public:
 	/**
 	 * @brief 지정한 AssetType에 해당하는 DataAsset들을 비동기 로드하여, 지정된 TMap에 등록하는 템플릿 함수.
 	 *
@@ -56,8 +60,6 @@ public:
 
 	const UDSCharacterDataAsset* GetCharacterDataByType(ECharacterType InType) const;
 	const UDSComboActionData* GetComboActionData() const;
-
-	static UDSGameDataSubsystem* Get(UObject* WorldContextObject);
 
 	/**
 	 * @brief Enum 값에 해당하는 이름의 행 데이터(FTableRowBase)를 반환하는 템플릿 함수.
@@ -115,9 +117,6 @@ protected:
 public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data Map")
 	TMap<ECharacterType, UDSCharacterDataAsset*> CharacterDataMap;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data Map")
-	TObjectPtr<UDSComboActionData> ComboActionData;
 };
 
 template<typename TAssetType, typename TKeyType>

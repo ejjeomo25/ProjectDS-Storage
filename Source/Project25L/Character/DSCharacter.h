@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 //Default
 #include "CoreMinimal.h"
 
 //UE
 #include "GameplayTagContainer.h"
+
 //Game
 #include "Character/DSCharacterBase.h"
 #include "Stat/DSStatComponent.h"
@@ -17,6 +18,8 @@ class UCameraComponent;
 class UDSInventoryComponent;
 struct FDSSkillSpecHandle;
 class ADSGiftBox;
+class UDSPlayerInputComponent;
+class UDSFlightComponent;
 
 // Delegate
 DECLARE_MULTICAST_DELEGATE(FOnInventoryToggle);
@@ -33,11 +36,11 @@ public:
 	void AddSkill(const int32 InputID);
 	
 	UFUNCTION(Server, Reliable)
-	void ServerRPC_ReadyPlayer(int32 PlayerCount);
+	void ServerRPC_ReadyPlayer(int32 PlayerCount, FGameplayTag ReadyPlayerWidgetTag);
 
 protected:
 	UFUNCTION(Client, Reliable)
-	void ClientRPC_ReadyPlayer(int32 PlayerCount);
+	void ClientRPC_ReadyPlayer(int32 PlayerCount, FGameplayTag ReadyPlayerWidgetTag);
 
 public:
 	/*카메라 위치*/
@@ -48,7 +51,13 @@ public:
 	float GetFOV();
 
 	FOnInventoryToggle OnInventoryToggle;
+
 public:
+	virtual float GetInputThreshold();
+public:
+	UDSFlightComponent* GetFlightComponent() const { return FlightComponent; }
+	UDSPlayerInputComponent* GetPlayerInputComponent() const { return DSPlayerInputComponent; }
+
 	/*Cheat*/
 	UFUNCTION(Server, Unreliable)
 	void ServerRPC_UseItem(int32 ItemID, int32 ItemCount);
@@ -66,12 +75,12 @@ protected:
 
 	virtual float TakeFinalDamage(float DamageAmount, const FDSDamageEvent& NewDamageEvent, class AController* EventInstigator, AActor* DamageCauser);
 
+protected:
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent);
+
 public:
 
 	void SetJumpHeight(uint8 bIsRun);
-	// UI
-	UPROPERTY(EditAnywhere)
-	uint32 bIsShowGiftBox :1;
 
 protected:
 	UPROPERTY(Transient)
@@ -88,7 +97,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> Camera;
 
-	TMap<ESkillType, FDSSkillSpecHandle> SkillSpecHandles;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDSFlightComponent> FlightComponent;
 
 protected:
 	/*Character Setting*/
@@ -104,9 +114,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|FOV")
 	float FOV;
 
-	UPROPERTY(EditAnywhere, Category = "Settings|Widget")
-	TMap<FGameplayTag, TSoftClassPtr<UUserWidget>> WidgetMap;
 
-	UPROPERTY(EditAnywhere, Category = "Settings|Widget")
-	FGameplayTag ReadyPlayerWidgetTag;
+protected:
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDSPlayerInputComponent> DSPlayerInputComponent;
 };

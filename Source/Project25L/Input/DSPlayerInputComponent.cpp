@@ -23,16 +23,18 @@
 #include "Item/DSItemActor.h"
 
 #include "Skill/DSSkillControlComponent.h"
-#include "Skill/DSNoGearFlightSkill.h"
+#include "Character/DSFlightComponent.h"
 
-#include "UI/DSGameMunu.h"
 #include "HUD/DSHUD.h"
 
 
 UDSPlayerInputComponent::UDSPlayerInputComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, CurrentSpeedType(ESpeedType::None)
+	, bIsCrouched(false)
+	, HoldTime(0.3f)
+	, bIsInventoryMode(false)
 {
-	
 }
 
 void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponent)
@@ -72,8 +74,10 @@ void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponen
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Weapon.Toggle")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Weapon_Toggle);
 		DSInputComponent->BindTripleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Weapon.PrimaryAction")), this,
 			&UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Started, &UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Onging, &UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Released);
+		
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Weapon.SecondaryAction")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Weapon_SecondaryAction);
-	
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Weapon.Equipment_toggle")), ETriggerEvent::Completed, this, &UDSPlayerInputComponent::Input_Equipment_Toggle);
+
 		//UI
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.UI.Inventory")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_UI_Inventory);
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.UI.Status")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_UI_Status);
@@ -81,8 +85,10 @@ void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponen
 
 		// FlightSkill
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Begin")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Begin);
-		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Up")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Up);
-		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Down")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Down);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Up")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Skil_Flight_Up);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Up")), ETriggerEvent::Completed, this, &UDSPlayerInputComponent::Input_Skill_Flight_Released);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Down")), ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Skil_Flight_Down);
+		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Down")), ETriggerEvent::Completed, this, &UDSPlayerInputComponent::Input_Skill_Flight_Released);
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Dodge")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Dodge);
 		DSInputComponent->BindSingleActions(InputConfig, FGameplayTag::RequestGameplayTag(FName("InputTag.Skill.Flight.Boost")), ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skil_Flight_Boost);
 	}
@@ -92,8 +98,8 @@ void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponen
 
 void UDSPlayerInputComponent::SetInputMappingContext(EInputMappingContextType NewIMCType)
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
-	if (false == IsValid(PlayerController))
+	APlayerController* PlayerController = GetController<APlayerController>();
+	if (false == IsValid(PlayerController) || false == IsValid(InputMappingContexts[NewIMCType]))
 	{
 		return;
 	}
@@ -123,7 +129,7 @@ void UDSPlayerInputComponent::Input_Move(const FInputActionValue& InputActionVal
 {
 	FVector2D MovementVector = InputActionValue.Get<FVector2D>();
 
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -157,7 +163,8 @@ void UDSPlayerInputComponent::Input_Move(const FInputActionValue& InputActionVal
 void UDSPlayerInputComponent::Input_Look_Mouse(const FInputActionValue& InputActionValue)
 {
 	const FVector2D Value = InputActionValue.Get<FVector2D>();
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -181,7 +188,8 @@ void UDSPlayerInputComponent::Input_Look_Mouse(const FInputActionValue& InputAct
 
 void UDSPlayerInputComponent::Input_Jump(const FInputActionValue& InputActionValue)
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -206,7 +214,8 @@ void UDSPlayerInputComponent::Input_Jump(const FInputActionValue& InputActionVal
 
 void UDSPlayerInputComponent::Input_StopJumping(const FInputActionValue& InputActionValue)
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -230,7 +239,8 @@ void UDSPlayerInputComponent::Input_Parkour(const FInputActionValue& InputAction
 
 void UDSPlayerInputComponent::Input_Sit(const FInputActionValue& InputActionValue)
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -250,7 +260,8 @@ void UDSPlayerInputComponent::Input_Sit(const FInputActionValue& InputActionValu
 void UDSPlayerInputComponent::Input_StopSit(const FInputActionValue& InputActionValue)
 {
 
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -269,7 +280,8 @@ void UDSPlayerInputComponent::Input_StopSit(const FInputActionValue& InputAction
 
 void UDSPlayerInputComponent::Input_ToggleSit(const FInputActionValue& InputActionValue)
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -313,7 +325,8 @@ void UDSPlayerInputComponent::Input_Pause(const FInputActionValue& InputActionVa
 void UDSPlayerInputComponent::Input_Interaction(const FInputActionValue& InputActionValue)
 {
 	//오버랩 된 상태에서 F키를 누르면 
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -364,6 +377,14 @@ void UDSPlayerInputComponent::Input_Weapon_Toggle(const FInputActionValue& Input
 
 void UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Started(const FInputActionValue& InputActionValue)
 {
+	//실행할 때 HoldTime 업데이트 한다. 무기의 Threshold값으로
+	ADSCharacter* Character = GetPawn<ADSCharacter>();
+
+	if (IsValid(Character))
+	{
+		HoldTime = Character->GetInputThreshold();
+	}
+
 	UWorld* World = GetWorld();
 	check(World);
 	PressedTime = World->GetTimeSeconds();
@@ -372,30 +393,26 @@ void UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Started(const FInputAct
 void UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Onging(const FInputActionValue& InputActionValue)
 {
 	UWorld* World = GetWorld();
+
 	check(World);
+	PressedTime += World->GetDeltaSeconds();
 
-	float CurrentTime = World->GetTimeSeconds();
-	float HoldDuration = CurrentTime - PressedTime;
-
-	if (HoldDuration >= HoldTime)
-	{
-		// Basic Weapon: Rapid Fire
-		// Throwable Weapon: Aiming the trajectory
-	}
-	
+	DefaultAttack();
 }
 
 void UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Released(const FInputActionValue& InputActionValue)
 {
-	UWorld* World = GetWorld();
-	check(World);
+	DefaultAttack();
+}
 
-	float ReleasedTime = World->GetTimeSeconds();
-	float ClickDuration = ReleasedTime - PressedTime;
-	if (ClickDuration < HoldTime)
+void UDSPlayerInputComponent::DefaultAttack()
+{
+
+	if (PressedTime >= HoldTime)
 	{
-		// Basic Weapon: Normal Attack 
-		APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+		PressedTime = 0.f;
+
+		APlayerController* PlayerController = GetController<APlayerController>();
 		if (!IsValid(PlayerController))
 		{
 			return;
@@ -405,56 +422,86 @@ void UDSPlayerInputComponent::Input_Weapon_PrimaryAction_Released(const FInputAc
 		if (IsValid(Character))
 		{
 			UDSSkillControlComponent* SkillControlComponent = Character->GetSkillControlComponent();
-			if(IsValid(SkillControlComponent))
+			if (IsValid(SkillControlComponent))
 			{
 				DSEVENT_DELEGATE_INVOKE(SkillControlComponent->OnSkillPressedEvents[ESkillType::MouseLSkill]);
 			}
 		}
-		
-	}
-	else
-	{
-		// UE_LOG(LogTemp, Warning, TEXT("Hold"));
-		// Basic Weapon: Rapid Fire Stop
-		// Throwable Weapon: Attack at the targeted location
 	}
 }
 
+UDSFlightComponent* UDSPlayerInputComponent::GetFlightComponent() const
+{
+	APlayerController* PlayerController = GetController<APlayerController>();
+	if (false == IsValid(PlayerController))
+	{
+		// UE_LOG(LogTemp, Warning, TEXT("Hold"));
+	}
+
+	ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
+	if (false == IsValid(Character))
+	{
+		return nullptr;
+	}
+
+	UDSFlightComponent* FlightComponent = Character->GetFlightComponent();
+
+	if (false == IsValid(FlightComponent))
+	{
+		return nullptr;
+	}
+
+	return FlightComponent;
+}
 
 void UDSPlayerInputComponent::Input_Weapon_SecondaryAction(const FInputActionValue& InputActionValue)
 {
+}
+
+void UDSPlayerInputComponent::Input_Equipment_Toggle()
+{
+	ADSArmedCharacter* Character = GetPawn<ADSArmedCharacter>();
+	
+	check(Character);
+
+	bool bIsEquipped = Character->GetIsEquipped();
+	if (bIsEquipped)
+	{
+		//장착된 상태-> 해제한다.
+		Character->UnEquip();
+	}
+	else
+	{
+		//해제된 상태->장착한다.
+		Character->Equip();
+	}
+
 }
 
 void UDSPlayerInputComponent::Input_UI_Inventory(const FInputActionValue& InputActionValue)
 {
 	DS_NETLOG(DSNetLog, Log, TEXT("Inventory"));
 
-	ADSPlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
-
+	ADSPlayerController* PlayerController = GetController<ADSPlayerController>();
 	if (IsValid(PlayerController))
 	{
+		UDSUIManagerSubsystem* UIManager = UDSUIManagerSubsystem::Get(this);
+		check(UIManager);
+
+
 		if (bIsInventoryMode)
 		{
 			PlayerController->SetGameFocusMode();
+			UIManager->PopContentToLayer(FGameplayTag::RequestGameplayTag(FName("UI.Layer.GameMenu.Inventory")));
 			bIsInventoryMode = false;
 		}
 		else
 		{
 			bIsInventoryMode = true;
+			UIManager->PushContentToLayer(FGameplayTag::RequestGameplayTag(FName("UI.Layer.GameMenu.Inventory")));
 			PlayerController->SetUIFocusMode();
 		}
 
-		APawn* Pawn = PlayerController->GetPawn();
-		if (!IsValid(Pawn))
-		{
-			return;
-		}
-		ADSCharacter* Character = Cast<ADSCharacter>(Pawn);
-
-		if (IsValid(Character))
-		{
-			DSEVENT_DELEGATE_INVOKE(Character->OnInventoryToggle);
-		}
 	}
 }
 
@@ -464,58 +511,101 @@ void UDSPlayerInputComponent::Input_UI_Status(const FInputActionValue& InputActi
 
 void UDSPlayerInputComponent::Input_Skil_Flight_Begin(const FInputActionValue& InputActionValue)
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
-	if (false == IsValid(PlayerController))
-	{
-		return;
-	}
-	
-	ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
-	if(false == IsValid(Character))
+	UDSFlightComponent* FlightComponent = GetFlightComponent();
+
+	if (false == IsValid(FlightComponent))
 	{
 		return;
 	}
 
-	UDSSkillControlComponent* SkillControlComponent = Character->GetSkillControlComponent();
-
-	if(false == IsValid(SkillControlComponent))
+	// 비행 가능한 상태라면
+	if (true == FlightComponent->EnableFlying())
 	{
-		return;
-	}
-
-	// 비행 스킬을 가지고 있다면
-	if(FDSSkillSpec* SkilSpec = SkillControlComponent->FindSkillSpecFromClass(UDSNoGearFlightSkill::StaticClass()))
-	{
-		DSEVENT_DELEGATE_INVOKE(SkillControlComponent->OnSkillPressedEvents[ESkillType::FlightSkill]);
-		 DSEVENT_DELEGATE_INVOKE(OnInputMappingChangedEvent, EInputMappingContextType::FlightIMC);
+		DSEVENT_DELEGATE_INVOKE(OnInputMappingChangedEvent, EInputMappingContextType::FlightIMC);
+		DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::Begin);
 	}
 }
 
 void UDSPlayerInputComponent::Input_Skil_Flight_Up(const FInputActionValue& InputActionValue)
 {
-	DS_LOG(DSSkillLog, Warning, TEXT(""));
+	UDSFlightComponent* FlightComponent = GetFlightComponent();
+
+	if (false == IsValid(FlightComponent))
+	{
+		return;
+	}
+
+	if (true == FlightComponent->EnableFlying())
+	{
+		DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::Up);
+	}
+}
+
+void UDSPlayerInputComponent::Input_Skill_Flight_Released(const FInputActionValue& InputActionValue)
+{
+	UDSFlightComponent* FlightComponent = GetFlightComponent();
+
+	if (false == IsValid(FlightComponent))
+	{
+		return;
+	}
+
+	if (true == FlightComponent->EnableFlying())
+	{
+		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Hovering);
+	}
 }
 
 void UDSPlayerInputComponent::Input_Skil_Flight_Down(const FInputActionValue& InputActionValue)
 {
-	DS_LOG(DSSkillLog, Warning, TEXT(""));
+	UDSFlightComponent* FlightComponent = GetFlightComponent();
+
+	if (false == IsValid(FlightComponent))
+	{
+		return;
+	}
+
+	if (true == FlightComponent->EnableFlying())
+	{
+		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Down);
+	}
 }
 
 void UDSPlayerInputComponent::Input_Skil_Flight_Dodge(const FInputActionValue& InputActionValue)
 {
-	DS_LOG(DSSkillLog, Warning, TEXT(""));
+	UDSFlightComponent* FlightComponent = GetFlightComponent();
+
+	if (false == IsValid(FlightComponent))
+	{
+		return;
+	}
+
+	if (true == FlightComponent->EnableFlying())
+	{
+		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Dodge);
+	}
 }
 
 void UDSPlayerInputComponent::Input_Skil_Flight_Boost(const FInputActionValue& InputActionValue)
 {
-	DS_LOG(DSSkillLog, Warning, TEXT(""));
+	UDSFlightComponent* FlightComponent = GetFlightComponent();
+
+	if (false == IsValid(FlightComponent))
+	{
+		return;
+	}
+
+	if (true == FlightComponent->EnableFlying())
+	{
+		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Boost);
+	}
 }
 
 
 
 void UDSPlayerInputComponent::SetSpeed(ESpeedType TargetwalkSpeed)
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return;
@@ -539,7 +629,7 @@ void UDSPlayerInputComponent::SetSpeed(ESpeedType TargetwalkSpeed)
 
 ESpeedType UDSPlayerInputComponent::CalculateSpeed()
 {
-	APlayerController* PlayerController = Cast<ADSPlayerController>(GetOwner());
+	APlayerController* PlayerController = GetController<APlayerController>();
 	if (!IsValid(PlayerController))
 	{
 		return ESpeedType::None;
@@ -567,6 +657,7 @@ ESpeedType UDSPlayerInputComponent::CalculateSpeed()
 	
 	return ESpeedType::Forward;
 }
+
 
 void UDSPlayerInputComponent::SetCrounchMode(ECrouchMode TargetMode)
 {

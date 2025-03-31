@@ -60,11 +60,11 @@ void UDSCheatManager::CrouchMode(ECrouchMode CrouchMode)
 	ADSPlayerController* PlayerController = Cast<ADSPlayerController>(GetOuterAPlayerController());
 	if (IsValid(PlayerController))
 	{
-		UDSPlayerInputComponent* PlayerInputComponent = PlayerController->GetPlayerInputComponent();
-		if (IsValid(PlayerInputComponent))
-		{
-			PlayerInputComponent->SetCrounchMode(CrouchMode);
-		}
+		//UDSPlayerInputComponent* PlayerInputComponent = PlayerController->GetPlayerInputComponent();
+		//if (IsValid(PlayerInputComponent))
+		//{
+		//	PlayerInputComponent->SetCrounchMode(CrouchMode);
+		//}
 	}
 	
 #endif

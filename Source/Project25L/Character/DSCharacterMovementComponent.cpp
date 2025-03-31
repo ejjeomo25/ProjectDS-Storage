@@ -1,11 +1,13 @@
-﻿//Default
+//Default
 #include "Character/DSCharacterMovementComponent.h"
 
 //UE
 
 //Game
+#include "Character/DSFlightComponent.h"
 #include "Character/DSCharacter.h"
 #include "DSLogChannels.h"
+#include "Components/CapsuleComponent.h"
 
 
 UDSCharacterMovementComponent::UDSCharacterMovementComponent()
@@ -19,6 +21,55 @@ void UDSCharacterMovementComponent::SetSpeedCommand(ESpeedType TargetWalkSpeed)
 	CurrentSpeedType = TargetWalkSpeed;
 }
 
+bool UDSCharacterMovementComponent::IsMovingOnGround() const
+{
+	if(IsFlying())
+	{
+		return false; 
+	}
+	
+	return Super::IsMovingOnGround();
+}
+
+bool UDSCharacterMovementComponent::CanLand() const
+{
+	if (false == IsFlying())
+	{
+		return false;
+	}
+
+	ACharacter* Character = GetCharacterOwner();
+	if (false == IsValid(Character))
+	{
+		return false;
+	}
+
+	UCapsuleComponent* Capsule = Character->GetCapsuleComponent();
+	if (false == IsValid(Capsule))
+	{
+		return false;
+	}
+
+	float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	FVector Start = Character->GetActorLocation() - FVector(0, 0, HalfHeight * 0.5f);
+	FVector End = Start - FVector(0, 0, GroundCheckThreshold);
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(Character);
+
+	DrawDebugLine(GetWorld(), Start, End, FColor::Blue, false, 0.1f, 0, 2.0f); 
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
+		Hit,
+		Start,
+		End,
+		ECC_Visibility,
+		Params
+	);
+
+	return bHit;
+}
 
 FNetworkPredictionData_Client* UDSCharacterMovementComponent::GetPredictionData_Client() const
 {
@@ -39,11 +90,13 @@ void UDSCharacterMovementComponent::OnMovementUpdated(float DeltaSeconds, const 
 	{
 		bChangeSpeed = false;
 	}
+
+	ApplyFloatingEffect(DeltaSeconds);
 }
 
 float UDSCharacterMovementComponent::GetMaxSpeed() const
 {
-	if (SpeedMode.Num() < 4)
+	if (SpeedMode.Num() < 4 || FlightSpeedMode.Num() < 4)
 	{
 		return Super::GetMaxSpeed();
 	}
@@ -57,7 +110,7 @@ float UDSCharacterMovementComponent::GetMaxSpeed() const
 	case MOVE_Swimming:
 		return MaxSwimSpeed;
 	case MOVE_Flying:
-		return MaxFlySpeed;
+		return FlightSpeedMode[CurrentSpeedType];
 	case MOVE_Custom:
 		return MaxCustomMovementSpeed;
 	case MOVE_None:
@@ -73,12 +126,49 @@ void UDSCharacterMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 	uint8 ExtractedSpeed = Flags & 0xF0;
 	ESpeedType SpeedType = static_cast<ESpeedType>(ExtractedSpeed);
 
+	//*****************코드 리뷰 : IsValid ****************************//
 	if (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_Authority)
 	{
 		if (SpeedMode.Contains(SpeedType))
 		{
 			CurrentSpeedType = SpeedType;
 		}
+	}
+}
+
+void UDSCharacterMovementComponent::ApplyFloatingEffect(float DeltaSeconds)
+{
+	if (true == CanLand())
+	{
+		return;
+	}
+
+
+	//*****************코드 리뷰 : Character 쓰든... CharacterOwner 쓰든.. 하나만 하시면 될듯 ****************************//
+
+	ADSCharacter* Character = Cast<ADSCharacter>(GetCharacterOwner());
+	if (false == IsValid(Character))
+	{
+		return;
+	}
+	UDSFlightComponent* FlightComponent = Character->GetFlightComponent();
+	if (false == IsValid(FlightComponent))
+	{
+		return;
+	}
+
+	if (IsFlying())
+	{
+		float FloatStrength = 1.0f;
+		float FloatSpeed = 4.0f;
+
+		float Time = GetWorld()->GetTimeSeconds();
+		float OffsetZ = FMath::Sin(Time * FloatSpeed) * FloatStrength;
+
+		FVector NewLocation = CharacterOwner->GetActorLocation();
+		NewLocation.Z += OffsetZ;
+
+		CharacterOwner->SetActorLocation(NewLocation);
 	}
 }
 
@@ -108,6 +198,7 @@ void FDSSavedMove_Character::SetInitialPosition(ACharacter* Character)
 
 	UDSCharacterMovementComponent* DSMovement = Cast<UDSCharacterMovementComponent>(Character->GetCharacterMovement());
 
+	//*****************코드 리뷰 : IsValid ****************************//
 	if (DSMovement)
 	{
 		bChangeSpeed = DSMovement->bChangeSpeed;

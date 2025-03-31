@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -128,7 +128,7 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void InitializeComponent() override;
 	virtual void OnRegister() override;
-	virtual void OnUnregister() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 protected:
 	/** Cancel a specific skill spec */

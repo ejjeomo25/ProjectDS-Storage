@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -10,6 +10,8 @@
 //UHT
 #include "DSBaseAnimInstance.generated.h"
 
+
+//*****************코드 리뷰 : 아래 별 삭제  ****************************//
 /**
  * 
  */
@@ -20,14 +22,16 @@ class PROJECT25L_API UDSBaseAnimInstance : public UAnimInstance
 public:
 	UDSBaseAnimInstance();
 
-	UFUNCTION()
-	void PlayPunchMontage(float InPlayRate);
 
 protected:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override; 
 
 protected:
+
+
+	//*****************코드 리뷰 : Transient 변경  ****************************//
+	//*****************코드 리뷰 : 전방 선언 수정  ****************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	TObjectPtr<class ADSCharacterBase> Player;
 
