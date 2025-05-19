@@ -1,22 +1,22 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
 
-// UE
-#include "Blueprint/UserWidget.h"
-
 // Game
+#include "UI/Base/DSUserWidget.h"
 #include "GameData/Items/DSItemData.h"
 
 // UHT
 #include "DSItemList.generated.h"
 
 
-class UDSListView;
+class UDSItemListView;
+class UDSItemTooltip;
+class UCanvasPanel;
 
 UCLASS()
-class PROJECT25L_API UDSItemList : public UUserWidget
+class PROJECT25L_API UDSItemList : public UDSUserWidget
 {
 	GENERATED_BODY()
 	
@@ -28,14 +28,27 @@ public:
 
 	void AddItems(TArray<FDSItemInfo>& ItemInfos);
 	void RemoveItem(int32 IndexToRemove);
+
 protected:
-	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+
+	void InitItemList();
 	void FocusOnItemEntry(int PreSelectedIdx);
+	void OnListEntryHovered(int HoveredIdx);
+	void OnListEntryUnhovered(int UnHoveredIdx);
+
+	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+
 protected:
 	UPROPERTY(Transient)
 	int32 SelectedIdx;
+	
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UDSItemTooltip>> ItemTooltips;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (BindWidgetOptional))
-	TObjectPtr<UDSListView> ListView_Items;
+	TObjectPtr<UDSItemListView> ListView_Items;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (BindWidgetOptional))
+	TObjectPtr<UCanvasPanel> Canvas_ItemTooltip;
+	
 };

@@ -26,7 +26,6 @@ class UDSFlightComponent;
  * 플레이어 입력을 처리하고 InputAction과 GameplayTag를 매핑하는 Component
  */
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnInputMappingChanged, EInputMappingContextType);
 
 UCLASS()
 class PROJECT25L_API UDSPlayerInputComponent : public UPawnComponent
@@ -37,20 +36,20 @@ class PROJECT25L_API UDSPlayerInputComponent : public UPawnComponent
 public:
 	UDSPlayerInputComponent(const FObjectInitializer& ObjectInitializer);
 
-	/* Change InputMappingContext*/
-	FOnInputMappingChanged OnInputMappingChangedEvent;
-
-	void SetupInputComponent(UInputComponent* InputComponent);
+	virtual void SetupInputComponent(UInputComponent* InputComponent);
+	/*초기 InputContextMapping 부여*/
 	void SetInputMappingContext(EInputMappingContextType NewIMCType);
-	void InitialCharacterSetting();
+	void OnInputMappingChanged(bool bCanFly, bool bIsCompleted);
 
+	void InitialCharacterSetting();
 	void SetCrounchMode(ECrouchMode TargetMode);
 
+	ESpeedType GetSpeedType() { return CurrentSpeedType; }
 protected:
+
 	void SetSpeed(ESpeedType TargetwalkSpeed);
 
 	UDSFlightComponent* GetFlightComponent() const;
-	void SetFlightDirection(const FVector2D& MovementVector);
 
 protected:
 	virtual void OnUnregister() override;
@@ -80,9 +79,9 @@ protected:
 	// Weapon
 	void Input_Weapon_Toggle(const FInputActionValue& InputActionValue);
 
-	void Input_Weapon_Attack_Started(const FInputActionValue& InputActionValue, FGameplayTag InputTag);
-	void Input_Weapon_Attack_Onging(const FInputActionValue& InputActionValue, FGameplayTag InputTag);
-	void Input_Weapon_Attack_Completed(const FInputActionValue& InputActionValue, FGameplayTag InputTag);
+	virtual void Input_Weapon_Attack_Started(const FInputActionValue& InputActionValue, FGameplayTag InputTag);
+	virtual void Input_Weapon_Attack_Onging(const FInputActionValue& InputActionValue, FGameplayTag InputTag);
+	virtual void Input_Weapon_Attack_Completed(const FInputActionValue& InputActionValue, FGameplayTag InputTag);
 
 	void Input_Equipment_Toggle();
 
@@ -91,13 +90,10 @@ protected:
 	void Input_UI_Status(const FInputActionValue& InputActionValue);
 
 	// Flight
-	void Input_Skill_Flight_Begin(const FInputActionValue& InputActionValue);
 	void Input_Skill_Flight_Up(const FInputActionValue& InputActionValue); 
-	void Input_Skill_Flight_Released(const FInputActionValue& InputActionValue);
 	void Input_Skill_Flight_Down(const FInputActionValue& InputActionValue);
-	void Input_Skill_Flight_Dodge(const FInputActionValue& InputActionValue);
-	void Input_Skill_Flight_Boost(const FInputActionValue& InputActionValue);
-	void Input_Skill_Flight_Boost_Released(const FInputActionValue& InputActionValue);
+	void Input_Skill_Flight_Begin(const FInputActionValue& InputActionValue);
+	// 공통
 	ESpeedType CalculateSpeed();
 
 	void DefaultAttack(FGameplayTag InputTag);

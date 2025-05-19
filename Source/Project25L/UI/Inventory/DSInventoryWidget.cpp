@@ -1,6 +1,7 @@
 // Default
 #include "UI/Inventory/DSInventoryWidget.h"
 
+<<<<<<< HEAD
 // UE
 #include "Kismet/GameplayStatics.h"
 
@@ -78,3 +79,5 @@ bool UDSInventoryWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDr
 	return true;
 }
 
+=======
+>>>>>>> 6d97a8e7eb31f849c4f7006f89fed6a9f4c3c463

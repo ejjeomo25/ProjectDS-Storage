@@ -19,28 +19,17 @@ struct FDSWeaponData : public FTableRowBase
 
 public:
 	FDSWeaponData() :
-		EquipMontage(nullptr)
-		, UnEquipMontage(nullptr)
+		Montages()
 		, Weapon(nullptr)
-		, InputThreshold(0.f)
 		, SpreadCoef(0.f)
 	{ }
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
-	TSoftObjectPtr<UAnimMontage> EquipMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Animation")
+	TMap<EWeaponState, TSoftObjectPtr<UAnimMontage>> Montages;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
-	TSoftObjectPtr<UAnimMontage> UnEquipMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
-	TSoftObjectPtr<UAnimMontage> AttackMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Mesh")
 	TSoftClassPtr<ADSWeapon> Weapon;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	float InputThreshold;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Gun")
 	float SpreadCoef;
 };

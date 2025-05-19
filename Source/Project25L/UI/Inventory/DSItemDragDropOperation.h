@@ -10,6 +10,7 @@
 
 // Game
 #include "GameData/Items/DSItemData.h"
+#include "GameData/DSEnums.h"
 
 // UHT
 #include "DSItemDragDropOperation.generated.h"
@@ -24,5 +25,9 @@ public:
     FDSItemInfo ItemInfo;
 
     UPROPERTY(Transient, BlueprintReadWrite)
-    FIntPoint TopLeftIndex;
+	FIntPoint TopLeftIndex;
+
+    UPROPERTY()
+    EInventoryCategory InventoryCategory;
+
 };

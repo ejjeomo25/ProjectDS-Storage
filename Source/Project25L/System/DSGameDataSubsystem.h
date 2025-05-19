@@ -79,7 +79,7 @@ public:
 	 * @return FTableRowBase*   검색된 행 데이터의 포인터, 찾을 수 없는 경우 nullptr 반환
 	 */
 	FTableRowBase* GetDataRowByID(EDataTableType DataTableType, int32 DataID);
-
+	
 	/**
 	 * @brief DataTable들을 관리하는 DataTables 데이터 에셋을 반환하는 함수.
 	 */

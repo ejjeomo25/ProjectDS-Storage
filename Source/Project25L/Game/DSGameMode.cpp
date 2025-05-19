@@ -1,47 +1,70 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
+﻿// Default
 #include "Game/DSGameMode.h"
-#include "DSGameMode.h"
+
+// UE
+#include "GameFramework/Character.h"
+// Game
+#include "System/DSGameDataSubsystem.h"
+#include "GameData/DSCharacterDataAsset.h"
+#include "Player/DSPlayerController.h"
 
 #include "DSLogChannels.h"
-
 void ADSGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {
 	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
 
-	DS_LOG(DSNetLog, Log, TEXT("111111"));
 }
-
-//APlayerController* ADSGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
-//{
-//	APlayerController* NewPlayer = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
-//
-//	DS_LOG(DSNetLog, Log, TEXT(""));
-//
-//	return NewPlayer;
-//}
-
-
 
 void ADSGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	DS_LOG(DSNetLog, Log, TEXT("22222"));
 }
 
-void ADSGameMode::StartPlay()
+APawn* ADSGameMode::SpawnCharacter(APlayerController* InPlayerController, ECharacterType CharacterType)
 {
-	Super::StartPlay();
+	UDSGameDataSubsystem* DataSubsystem = UDSGameDataSubsystem::Get(this);
 
-	DS_LOG(DSNetLog, Log, TEXT("333333"));
-}
+	check(DataSubsystem);
 
-APlayerController* ADSGameMode::SpawnPlayerController(ENetRole InRemoteRole, const FString& Options)
-{
-	APlayerController* NewPlayer = Super::SpawnPlayerController(InRemoteRole, Options);
+	APawn* OldPawn = InPlayerController->GetPawn();
 
-	DS_LOG(DSNetLog, Log, TEXT("444444"));
-	return NewPlayer;
+	if(IsValid(OldPawn))
+	{
+		OldPawn->Destroy();
+		InPlayerController->UnPossess();
+	}
+
+	AActor* StartSpot = ChoosePlayerStart(InPlayerController);
+
+	if(IsValid(StartSpot))
+	{
+		const UDSCharacterDataAsset* DataAsset = DataSubsystem->GetDataAssetByType<ECharacterType, UDSCharacterDataAsset>(CharacterType);
+
+		if (IsValid(DataAsset))
+		{
+			TSubclassOf<APawn> SpawnedPawnClass = DataAsset->ActorClass.LoadSynchronous();
+
+			if(IsValid(SpawnedPawnClass))
+			{
+				UWorld* World = GetWorld();
+
+				check(World);
+
+				FActorSpawnParameters SpawnInfo;
+				SpawnInfo.Instigator = GetInstigator();
+				SpawnInfo.ObjectFlags |= RF_Transient;	// We never want to save default player pawns into a map
+				
+				APawn *NewPawn = World->SpawnActor<APawn>(SpawnedPawnClass, StartSpot->GetTransform(), SpawnInfo);
+				
+				if(IsValid(NewPawn))
+				{
+					InPlayerController->SetPawn(NewPawn);
+					return NewPawn;
+				}
+			}
+		}
+	}
+
+	return nullptr;
 }

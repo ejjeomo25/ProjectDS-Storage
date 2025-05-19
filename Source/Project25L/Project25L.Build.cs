@@ -27,7 +27,8 @@ public class Project25L : ModuleRules
             "NavigationSystem",
             "AIModule",
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+            "AnimGraphRuntime"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

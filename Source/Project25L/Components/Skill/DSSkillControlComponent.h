@@ -14,11 +14,16 @@
 //UHT
 #include "DSSkillControlComponent.generated.h"
 
+
+
+static bool bReplicateSkillsToSimulatedProxies = false;
+
 // Delegate
-DECLARE_MULTICAST_DELEGATE(FOnSkillPressed);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSkillPressed, const FGameplayTag&);
 
 USTRUCT()
-struct FSkillSpec{
+struct FDSSkillSpecInitData 
+{
 	GENERATED_BODY()
 
 public:
@@ -31,6 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "DSSettings | Class")
 	FGameplayTag SkillTag;
 };
+
 UCLASS()
 class PROJECT25L_API UDSSkillControlComponent : public UPawnComponent
 {
@@ -44,17 +50,19 @@ public:
 	static EDataTableType GetSkillDataTableTypeByCharacter(ECharacterType CharacterType,int32 NonCharacterID);
 
 	virtual void OnPlayerControllerSet() { }
-	virtual void ActivatePrimarySKill() {}
-	virtual void ActivateSKill1() {}
-	virtual void ActivateSKill2() {}
+
+	virtual void InitializeSkillSpecs();
 
 	// SkillInputEvents
 	TMap<FGameplayTag, FOnSkillPressed> OnSkillPressedEvents;
 	TMap<FGameplayTag, FDSSkillSpecHandle> HasSkills;
 
+
 	// --------------------------------------
 	//	The important functions
 	// --------------------------------------
+	virtual void ReadyForReplication() override;
+
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	FDSSkillSpecHandle AddSkill(const FDSSkillSpec& Spec);
@@ -157,6 +165,7 @@ public:
 		return ActivatableSkills.Items;
 	}
 
+	virtual void TryActivateSkillByTag(const FGameplayTag& SkillTag);
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void InitializeComponent() override;
@@ -165,10 +174,11 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 	virtual void OnUnregister() override;
-	virtual void InitializeSkillSpecs();
+	
 
 protected:
 	/** Cancel a specific skill spec */
+	/* 스킬이 실행 전 호출되어야 작동한다. (Active 전)*/
 	virtual void CancelSkillSpec(FDSSkillSpec& Spec, UDSSkillBase* Ignore);
 
 	UFUNCTION(Client, reliable)
@@ -240,6 +250,7 @@ private:
 	UFUNCTION()
 	void OnRep_SkillOwnerActor();
 
+	bool ShouldTick(UDSSkillBase* SkillToTick) const;
 
 public:
 	FName AffectedAnimInstanceTag;
@@ -247,7 +258,6 @@ public:
 	bool IsSkillInputBlocked(int32 InputID) const;
 	const TArray<uint8>& GetBlockedSkillBindings() const;
 	FGameplayTagContainer GetActiveSkillTags() const;
-
 
 protected:
 	/** A pending activation that cannot be activated yet, will be rechecked at a later point */
@@ -325,6 +335,6 @@ private:
 	uint8 bDestroyActiveStateInitiated : 1;
 	
 	UPROPERTY(EditAnywhere, Category = "DSSettings | Skill")
-	TArray<FSkillSpec> Skills;
+	TArray<FDSSkillSpecInitData> SkillInitializeDatas;
 	
 };

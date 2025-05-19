@@ -44,6 +44,11 @@ public:
 	virtual bool IsMovingOnGround() const override;
 	bool CanLand() const;
 
+	void HandleMovementModeChanged(bool bCanFly, bool bIsCompleted);
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_OnMovementModeChanged(EMovementMode InMovementMode);
+
 protected:
 	virtual class FNetworkPredictionData_Client* GetPredictionData_Client() const override;
 	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;

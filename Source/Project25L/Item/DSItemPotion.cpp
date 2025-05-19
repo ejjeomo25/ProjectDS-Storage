@@ -122,15 +122,8 @@ void UDSItemPotion::UseItem(UDSStatComponent* Stat)
 			{
 				return;
 			}
-			UDSFlightComponent* FlightComponent = Character->GetFlightComponent();
 
-			if (true == IsValid(FlightComponent))
-			{
-				if (false == FlightComponent->EnableFlying())
-				{
-					DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::None);
-				}
-			}
+			Character->SetCanFly(true);
 		}
 	}
 	

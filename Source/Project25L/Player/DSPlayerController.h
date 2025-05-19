@@ -1,32 +1,37 @@
-#pragma once
-//Default
+﻿#pragma once
+// Default
 #include "CoreMinimal.h"
 
-//UE
+// UE
 #include "GameFramework/PlayerController.h"
 
 // Game
 #include "GameData/DSEnums.h"
 
-//UHT
+// UHT
 #include "DSPlayerController.generated.h"
 
 class UDSPlayerInputComponent;
+class UDSChatComponent;
 
 UCLASS()
 class PROJECT25L_API ADSPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
+	
 public:
-
 	ADSPlayerController();
 
 public:
+	ECharacterType GetCharacterType();
 	void SetUIFocusMode();
 	void SetGameFocusMode();
-	
-	ECharacterType GetCharacterType() { return CharacterType; }
+	void SpawnInitCharacter(ECharacterType CharacterType);
+	UDSChatComponent* GetChatComponent() const { return DSChatComponent;}
+	virtual void OnRep_Pawn() override;
+protected:
+	virtual void BeginPlay() override;
 
 public:
 	/*Cheat*/
@@ -36,10 +41,8 @@ public:
 	UFUNCTION(Server, Unreliable)
 	void ServerRPC_CheatAll(const FString& Message);
 
-protected:
-	
-	/*현재 CharacterType은 블루프린트로 넣는 용도이지만, 추후에 선택에 의해 변경한 Transient 로 변경 예정*/
-	UPROPERTY(EditAnywhere, Category = "DSSettings | Selected")
-	ECharacterType CharacterType;
 
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DSSettings | Chat", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDSChatComponent> DSChatComponent;
 };

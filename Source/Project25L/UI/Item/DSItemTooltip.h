@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
 
-// UE
-#include "Blueprint/UserWidget.h"
+// Game
+#include "UI/Base/DSUserWidget.h"
 
 // UHT
 #include "DSItemTooltip.generated.h"
@@ -12,7 +12,7 @@
 class UTextBlock;
 
 UCLASS()
-class PROJECT25L_API UDSItemTooltip : public UUserWidget
+class PROJECT25L_API UDSItemTooltip : public UDSUserWidget
 {
 	GENERATED_BODY()
 	

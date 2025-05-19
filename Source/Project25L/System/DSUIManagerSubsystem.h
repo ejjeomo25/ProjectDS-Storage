@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -29,7 +29,6 @@ public:
 	void FocusModal(APlayerController* PlayerController);
 
 	void SetMovementEnable(ACharacter* Character, bool bEnable);
-
 	bool RegisterWidget(UDSPrimaryLayout *Widget);
 
 	UUserWidget* GetTopLayer(FGameplayTag WidgetTag);

@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "Weapon/DSWeapon.h"
 
 // UE
@@ -30,7 +30,7 @@ void ADSWeapon::BeginPlay()
 	InitializeData();
 }
 
-FVector ADSWeapon::GetAutoTargetingLocation(const float& AimAngle, const float& AttackRadius) const
+FVector ADSWeapon::GetAutoTargetingLocation(const float& AimAngle, const FVector& StartLocation, const FVector& TargetLocation, const float& AttackRadius) const
 {
 	
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
@@ -45,13 +45,9 @@ FVector ADSWeapon::GetAutoTargetingLocation(const float& AimAngle, const float& 
 		return FVector();
 	}
 
-	//MuzzleFlush 는 Gun에서만 해당되기 때문에 Socket name 변경한다. 원거리에서 사용할 수 있는 소켓이름으로.
-	const FVector& Location = Mesh->GetSocketLocation(TEXT("MuzzleFlush"));
+	FVector TargetLoc = TargetLocation;
 
-	// 0.f 가까우면 플레이어가 바라보는 방향으로, 스킬 Attack Distance 만큼 전달, 가장 기본적인 공격 위치 지정
-	FVector TargetLoc = Location + Mesh->GetRightVector() * AttackRadius;
-
-	if (false == FMath::IsNearlyZero(AimAngle) && true == bUseAutoTargeting)
+	if (false == FMath::IsNearlyZero(AimAngle))
 	{
 		UWorld* World = GetWorld();
 		
@@ -66,11 +62,11 @@ FVector ADSWeapon::GetAutoTargetingLocation(const float& AimAngle, const float& 
 		//캐릭터와 같은 팀일 경우 Ignore 시킬 예정
 		IgnoreActors.Add(Character);
 		
-		bool Result = UKismetSystemLibrary::SphereOverlapActors(World, Location, AttackRadius, ObjectTypes, nullptr, IgnoreActors, OutActors);
+		bool Result = UKismetSystemLibrary::SphereOverlapActors(World, StartLocation, AttackRadius, ObjectTypes, nullptr, IgnoreActors, OutActors);
 		
 		DrawDebugCircle(
 			GetWorld(),
-			Location,                // 중심 좌표 (FVector)
+			StartLocation,                // 중심 좌표 (FVector)
 			AttackRadius,            // 반지름 (float)
 			32,                    // 세그먼트 수 (원 매끄럽게 할수록 높임)
 			FColor::Blue,          // 색상
@@ -99,7 +95,7 @@ FVector ADSWeapon::GetAutoTargetingLocation(const float& AimAngle, const float& 
 				{
 					const FVector& OtherLocation = OutActor->GetActorLocation();
 
-					float Distance = FMath::Abs(FVector::Distance(Location, OtherLocation));
+					float Distance = FMath::Abs(FVector::Distance(StartLocation, OtherLocation));
 
 					if (Distance <= MinDistance)
 					{
@@ -112,11 +108,6 @@ FVector ADSWeapon::GetAutoTargetingLocation(const float& AimAngle, const float& 
 	}
 	return TargetLoc;
 }
-
-void ADSWeapon::InitializeData()
-{
-}
-
 void ADSWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -124,20 +115,16 @@ void ADSWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(ADSWeapon, InputThreshold);
 }
 
+void ADSWeapon::InitializeData()
+{
+}
+
 FVector ADSWeapon::GetFinalDestination(const float& AimAngle, const float& SkillDistance) const
 {
 	return FVector();
 }
 
-void ADSWeapon::AttackPrimarySkill(const float& AutoAimAngle, const float& AttackDistance) const
-{
-}
-
-void ADSWeapon::AttackSkill1(const FVector& TargetLocation, const float& AttackRadius, const float& Impulse)
-{
-}
-
-void ADSWeapon::AttackSkill2(const float& AutoAimAngle, const float& AttackDistance, const float& AttackRadius)
+void ADSWeapon::AttackPrimarySkill(const float& AutoAimAngle, const float& AttackDistance, const float& SkillDamage) const
 {
 }
 

@@ -1,4 +1,4 @@
-﻿//Default
+//Default
 #include "Components/DSCharacterMovementComponent.h"
 
 //UE
@@ -73,6 +73,23 @@ bool UDSCharacterMovementComponent::CanLand() const
 	);
 
 	return bHit;
+}
+
+void UDSCharacterMovementComponent::HandleMovementModeChanged(bool bCanFly, bool bIsCompleted)
+{
+	if (bCanFly)
+	{
+		ServerRPC_OnMovementModeChanged(EMovementMode::MOVE_Flying);
+	}
+	else
+	{
+		ServerRPC_OnMovementModeChanged(EMovementMode::MOVE_Walking);
+	}
+}
+
+void UDSCharacterMovementComponent::ServerRPC_OnMovementModeChanged_Implementation(EMovementMode InMovementMode)
+{
+	SetMovementMode(InMovementMode);
 }
 
 FNetworkPredictionData_Client* UDSCharacterMovementComponent::GetPredictionData_Client() const

@@ -19,7 +19,6 @@ class PROJECT25L_API ADSCharacter_Mister : public ADSCharacter
 public:
 	ADSCharacter_Mister(const FObjectInitializer& ObjectInitializer);
 
-	FORCEINLINE virtual float GetInputThreshold() override;
 
 protected:
 	virtual void AttackHitCheck(const FName& HitSocket, const ESkillType& SkillTag) override;

@@ -3,11 +3,12 @@
 
 // UE
 #include "EngineUtils.h"
+#include "GameFramework/PlayerState.h"
 
 // Game
 #include "Character/Characters/DSCharacter.h"
 #include "DSLogChannels.h"
-#include "System/DSGameDataSubsystem.h"
+#include "GameData/DSEnums.h"
 #include "GameData/Items/DSItemData.h"
 #include "Item/DSItem.h"
 #include "Item/DSItemAccessory.h"
@@ -17,77 +18,181 @@
 #include "Item/DSItemVehicle.h"
 #include "Player/DSPlayerController.h"
 #include "Player/DSPlayerState.h"
-#include "GameData/DSEnums.h"
 #include "System/DSEventSystems.h"
+#include "System/DSGameDataSubsystem.h"
 
 UDSInventoryComponent::UDSInventoryComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, PersonalInventory()
 {
-
 }
 
-void UDSInventoryComponent::UseItem(int32 ItemIdx)
+void UDSInventoryComponent::PrintItem()
 {
-	if (false == PersonalInventory.IsValidIndex(ItemIdx))
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 	{
-		return;
-	}
+		APlayerController* PlayerController = Iterator->Get();
+		if (!PlayerController) continue;
 
-	if (GetNetMode() != ENetMode::NM_ListenServer)
-	{
-		//서버의 경우 위에서 사용했기 때문에 제거하지 않는다. 안그러면 이중으로 제거되는 문제가 있다.
-		PersonalInventory.RemoveAt(ItemIdx); //쒓컻 ъ슜
-	}
-	//이펙트 사용
-	ServerRPC_UseItem(ItemIdx, PersonalInventory.Num());
-}
+		// PlayerState 로그 출력
+		APlayerState* PlayerState = PlayerController->PlayerState;
+		if (!PlayerState) continue;
 
-bool UDSInventoryComponent::ServerRPC_UseItem_Validate(int32 ItemIdx, int ClientItemCount)
-{
+		FString PlayerID = FString::Printf(TEXT("Player ID: %d"), PlayerState->GetPlayerId());
+		UE_LOG(LogTemp, Log, TEXT("%s"), *PlayerID);
 
-	if (GetNetMode() != ENetMode::NM_ListenServer)
-	{
-		//클라이언트만 검사한다. 서버는 항상 참이다.
-		if (PersonalInventory.Num() - 1 != ClientItemCount)
+		// 컨트롤러가 조종 중인 Pawn 얻기
+		APawn* Pawn = PlayerController->GetPawn();
+		if (!Pawn) continue;
+
+		// 인벤토리 컴포넌트 가져오기 (여기선 UInventoryComponent가 있다고 가정)
+		UDSInventoryComponent* InventoryComp = Pawn->FindComponentByClass<UDSInventoryComponent>();
+		if (!InventoryComp) continue;
+
+		// 인벤토리 맵과 정보 가져오기
+		const TMap<EInventoryCategory, TArray<FDSItemInfo>>& InventoryMapPrint = InventoryComp->GetPersonalInventory();
+		const TMap<EInventoryCategory, FPersonalInventoryInfo>& InventoryInfoMapPrint = InventoryComp->GetPersonalInventoryInfo();
+
+		// 카테고리별 인벤토리 출력
+		for (const auto& Pair : InventoryInfoMapPrint)
 		{
-			//뒤에 들어간 아이템을 제거하면 된다.
-			//이때는 Idx Add 해주어야 한다.
-			ClientRPC_RollbackItems(true, PersonalInventory.Top());
-		}
-	}
-	return true;
-}
-void UDSInventoryComponent::ServerRPC_UseItem_Implementation(int32 ItemIdx, int ClientItemCount)
-{
-	UWorld* World = GetWorld();
+			EInventoryCategory Category = Pair.Key;
+			const FPersonalInventoryInfo& Info = Pair.Value;
 
-	check(World);
+			const TArray<FDSItemInfo>* Inventory = InventoryMapPrint.Find(Category);
+			if (!Inventory) continue;
 
-	int UsedItemID = PersonalInventory.Top().ID;
+			FString CategoryInfo = FString::Printf(TEXT("== Category: %s =="), *UEnum::GetValueAsString(Category));
+			UE_LOG(LogTemp, Log, TEXT("%s"), *CategoryInfo);
 
-	PersonalInventory.RemoveAt(ItemIdx); //한개 사용
-	
-	OnItemUsed(UsedItemID);
-
-	APlayerController* LocalPlayertController = GetController<APlayerController>();
-
-	//모든 클라이언트를 가지고와서 이펙트 사용!!
-	for (APlayerController* PlayerController : TActorRange<APlayerController>(GetWorld()))
-	{
-		if (IsValid(PlayerController) && LocalPlayertController != PlayerController)
-		{
-			if (!PlayerController->IsLocalController())
+			for (int32 Y = 0; Y < Info.Rows; ++Y)
 			{
-				ADSCharacter* OtherPlayer = Cast<ADSCharacter>(PlayerController->GetPawn());
-				if (OtherPlayer)
+				FString RowString;
+
+				for (int32 X = 0; X < Info.Columns; ++X)
 				{
-					//이펙트 실행
+					int32 Index = Y * Info.Columns + X;
+
+					if (!Inventory->IsValidIndex(Index))
+					{
+						RowString += TEXT(" ? ");
+						continue;
+					}
+
+					int32 ID = (*Inventory)[Index].ID;
+
+					if (ID == 0)
+					{
+						RowString += TEXT(" . ");
+					}
+					else
+					{
+						RowString += FString::Printf(TEXT("%d "), ID);
+					}
 				}
+
+				UE_LOG(LogTemp, Log, TEXT("%s"), *RowString);
 			}
 		}
 	}
 
+}
+
+EInventoryCategory UDSInventoryComponent::GetCategoryByItemID(int32 ItemID)
+{
+	UDSGameDataSubsystem* DataSubsystem = UDSGameDataSubsystem::Get(this);
+	check(DataSubsystem);
+	EItemType ItemType = IDSItem::ConvertToItemType(ItemID);
+	return (ItemType == EItemType::Vehicle) ? EInventoryCategory::PersonalVehicle : EInventoryCategory::PersonalItem;
+}
+
+FIntPoint UDSInventoryComponent::IndexToTile(int32 Index, int32 Columns)
+{
+	FIntPoint Tile;
+
+	Tile.X = Index % Columns;
+	Tile.Y = Index / Columns;
+
+	return Tile;
+
+}
+
+int32 UDSInventoryComponent::TiletoIndex(FIntPoint DSTile, int32 Columns)
+{
+	return DSTile.X + DSTile.Y * Columns;
+}
+
+void UDSInventoryComponent::OnRegister()
+{
+	Super::OnRegister();
+
+	InventoryMap.Add(EInventoryCategory::PersonalItem, TArray<FDSItemInfo>());
+	InventoryInfoMap.Add(EInventoryCategory::PersonalItem, FPersonalInventoryInfo(6, 6, 70, EItemType::None));
+
+	InventoryMap.Add(EInventoryCategory::PersonalVehicle, TArray<FDSItemInfo>());
+	InventoryInfoMap.Add(EInventoryCategory::PersonalVehicle, FPersonalInventoryInfo(3, 3, 70, EItemType::Vehicle));
+
+	// 배열 초기화
+	for (auto& Pair : InventoryInfoMap)
+	{
+		int32 SlotCount = Pair.Value.Columns * Pair.Value.Rows;
+		InventoryMap[Pair.Key].SetNum(SlotCount);
+
+		for (FDSItemInfo& Slot : InventoryMap[Pair.Key])
+		{
+			Slot.ID = 0;
+			Slot.isRotated = false;
+		}
+	}
+}
+
+bool UDSInventoryComponent::StoreItems(ADSItemActor* ItemActor, const FDSItemInfo& ItemDataInfo)
+{
+
+	FIntPoint StoredTopLeft;
+	bool bIsItemStored = TryAddItem(ItemDataInfo, &StoredTopLeft);
+
+	// 아이템이 저장됨 
+	if (bIsItemStored)
+	{
+		// 🔹 리슨 서버에서는 별도의 RPC 호출 없이 로컬에서 처리
+		if (GetOwner()->HasAuthority())
+		{
+			if (IsValid(ItemActor))
+			{
+				ItemActor->SetLifeSpan(0.3f);
+			}
+			DSEVENT_DELEGATE_INVOKE(OnItemAcquired, ItemDataInfo.ID, false);
+			return bIsItemStored;
+		}
+		DSEVENT_DELEGATE_INVOKE(OnItemAcquired, ItemDataInfo.ID, false);
+		ServerRPC_StoreItems(ItemActor, ItemDataInfo, StoredTopLeft);
+
+		return true;
+	}
+
+	DSEVENT_DELEGATE_INVOKE(OnInventoryFull, EAlertStatus::InventoryFull);
+	return false;
+}
+
+void UDSInventoryComponent::UseItem(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
+{
+
+	if (GetNetMode() != ENetMode::NM_ListenServer)
+	{
+		ExecuteRemoveItem(ItemInfo, TopLeftIndex);
+	}
+	ServerRPC_UseItem(ItemInfo, TopLeftIndex);
+
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+
+	if (InventoryCategory == EInventoryCategory::PersonalVehicle)
+	{
+		DSEVENT_DELEGATE_INVOKE(OnVehicleInventorySlotUpdated, ItemInfo, TopLeftIndex, true);
+	}
+	else
+	{
+		DSEVENT_DELEGATE_INVOKE(OnItemInventorySlotUpdated, ItemInfo, TopLeftIndex, true);
+	}
 }
 
 void UDSInventoryComponent::OnItemUsed(int32 ItemID)
@@ -137,7 +242,7 @@ void UDSInventoryComponent::OnItemUsed(int32 ItemID)
 			//실제 Stat 적용 로직
 			SelectedItem->UseItem(Character->GetStatComponent());
 		}
-		
+
 		DS_LOG(DSItemLog, Warning, TEXT("ItemID is valid"));
 	}
 	else
@@ -146,84 +251,43 @@ void UDSInventoryComponent::OnItemUsed(int32 ItemID)
 	}
 }
 
-void UDSInventoryComponent::OnRegister()
-{
-	Super::OnRegister();
-
-	const int32 TotalSlots = PersonalInventoryInfo.Columns * PersonalInventoryInfo.Rows;
-	PersonalInventory.SetNum(TotalSlots);
-	for (FDSItemInfo& Slot : PersonalInventory)
-	{
-		Slot.ID = 0;
-		Slot.isRotated = false;
-	}
-}
-
-void UDSInventoryComponent::PrintItem()
-{
-	for (const auto& Item : PersonalInventory)
-	{
-		if (IsValid(GEngine))
-		{
-			FString Msg = FString::Printf(TEXT("ItemID %d"),Item.ID);
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, Msg);
-		}
-	}
-}
-
 bool UDSInventoryComponent::IsRoomAvailable(const FDSItemInfo& ItemInfo, int32 TopLeftIndex)
 {
-	return GetEmptyTileIndex(ItemInfo, TopLeftIndex);
-}
 
-FIntPoint UDSInventoryComponent::IndextoTile(int32 Index, int32 Columns)
-{
-	FIntPoint Tile;
+	const EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
+	{
+		return false;
+	}
 
-	Tile.X = Index % Columns;
-	Tile.Y = Index / Columns;
-
-	return Tile;
-
-}
-
-int32 UDSInventoryComponent::TiletoIndex(FIntPoint DSTile, int32 Columns)
-{
-	return DSTile.X + DSTile.Y * Columns;
-}
-
-bool UDSInventoryComponent::GetEmptyTileIndex(const FDSItemInfo& ItemInfo, int32 TopLeftIndex)
-{
-	FIntPoint StartTile = IndextoTile(TopLeftIndex, PersonalInventoryInfo.Columns);
 
 	UDSGameDataSubsystem* DataManager = UDSGameDataSubsystem::Get(this);
-
 	check(DataManager);
-	
 	FDSItemData* ItemData = static_cast<FDSItemData*>(DataManager->GetDataRowByID(EDataTableType::ItemData, ItemInfo.ID));
 	if (nullptr == ItemData)
 	{
 		return false;
 	}
-	
 	const FIntPoint Dimensions = ItemData->Dimensions;
-	const bool bIsRotated = ItemInfo.isRotated;
-	const FIntPoint FinalSize = bIsRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
+	FIntPoint StartTile = IndexToTile(TopLeftIndex, InventoryInfo->Columns);
+	const FIntPoint FinalSize = ItemInfo.isRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
+
 	for (int32 y = 0; y < FinalSize.Y; ++y)
 	{
 		for (int32 x = 0; x < FinalSize.X; ++x)
 		{
 			FIntPoint TileToCheck(StartTile.X + x, StartTile.Y + y);
 
-			
-			if (TileToCheck.X < 0 || TileToCheck.X >= PersonalInventoryInfo.Columns ||
-				TileToCheck.Y < 0 || TileToCheck.Y >= PersonalInventoryInfo.Rows)
+
+			if (TileToCheck.X < 0 || TileToCheck.X >= InventoryInfo->Columns ||
+				TileToCheck.Y < 0 || TileToCheck.Y >= InventoryInfo->Rows)
 			{
 				return false;
 			}
-
-			int32 Index = TiletoIndex(TileToCheck, PersonalInventoryInfo.Columns);
-			if (IsItemAtIndex(Index))
+			int32 Index = TiletoIndex(TileToCheck, InventoryInfo->Columns);
+			if (IsItemAtIndex(Index, InventoryCategory))
 			{
 				return false;
 			}
@@ -231,205 +295,359 @@ bool UDSInventoryComponent::GetEmptyTileIndex(const FDSItemInfo& ItemInfo, int32
 	}
 
 	return true;
-
 }
 
-bool UDSInventoryComponent::IsItemAtIndex(int32 Index)
+void UDSInventoryComponent::AddItemAt(const FDSItemInfo& ItemInfo, int32 TopLeftIndex, bool bNotifyServer)
 {
-	if (PersonalInventory.IsValidIndex(Index))
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
 	{
-		return PersonalInventory[Index].ID > 0;
+		return;
 	}
-	return false;
-
-}
-
-void UDSInventoryComponent::AddItemAt(const FDSItemInfo& ItemInfo, int32 TopLeftIndex)
-{
-
-	FIntPoint StartTile = IndextoTile(TopLeftIndex, PersonalInventoryInfo.Columns);
 
 	UDSGameDataSubsystem* DataManager = UDSGameDataSubsystem::Get(this);
-
 	check(DataManager);
-
 	FDSItemData* ItemData = static_cast<FDSItemData*>(DataManager->GetDataRowByID(EDataTableType::ItemData, ItemInfo.ID));
-
 	FIntPoint Dimensions = ItemData->Dimensions;
-	const bool bIsRotated = ItemInfo.isRotated;
-	const FIntPoint FinalSize = bIsRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
+	FIntPoint StartTile = IndexToTile(TopLeftIndex, InventoryInfo->Columns);
+	const FIntPoint FinalSize = ItemInfo.isRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
+
 	for (int32 y = 0; y < FinalSize.Y; ++y)
 	{
 		for (int32 x = 0; x < FinalSize.X; ++x)
 		{
-			FIntPoint Tile;
-			Tile.X = StartTile.X + x;
-			Tile.Y = StartTile.Y + y;
+			const FIntPoint Tile = StartTile + FIntPoint(x, y);
+			const int32 Index = TiletoIndex(Tile, InventoryInfo->Columns);
 
-			int32 Index = TiletoIndex(Tile, PersonalInventoryInfo.Columns);
-
-			FDSItemInfo& Slot = PersonalInventory[Index];
-			Slot.ID = ItemInfo.ID;
-			Slot.isRotated = ItemInfo.isRotated;
-
-		}
-	}
-
-	RegisterItemToAllItems();
-	DSEVENT_DELEGATE_INVOKE(OnInventoryChanged);
-
-}
-
-void UDSInventoryComponent::RegisterItemToAllItems()
-{
-	TSet<int32> OccupiedIndices;
-	AllItems.Empty();
-
-	int32 Columns = PersonalInventoryInfo.Columns;
-	int32 Rows = PersonalInventoryInfo.Rows;
-
-	for (int32 Index = 0; Index < Columns * Rows; ++Index)
-	{
-		if (OccupiedIndices.Contains(Index))
-		{
-			continue; 
-		}
-
-		if (!PersonalInventory.IsValidIndex(Index)) continue;
-
-		const FDSItemInfo& Slot = PersonalInventory[Index];
-
-		if (Slot.ID == 0)
-		{
-			continue;
-		}
-
-		UDSGameDataSubsystem* DataManager = UDSGameDataSubsystem::Get(this);
-
-		check(DataManager);
-
-		FDSItemData* ItemData = static_cast<FDSItemData*>(DataManager->GetDataRowByID(EDataTableType::ItemData, Slot.ID));
-
-		if (nullptr == ItemData)
-		{
-			continue;
-		}
-
-		FIntPoint Dimensions = ItemData->Dimensions;
-		const bool bIsRotated = Slot.isRotated;
-		const FIntPoint FinalSize = bIsRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
-		FIntPoint TopLeftTile = IndextoTile(Index, Columns);
-		AllItems.Add(TopLeftTile, Slot); 
-
-		for (int32 y= 0; y < FinalSize.Y; ++y)
-		{
-			for (int32 x = 0; x < FinalSize.X; ++x)
+			if (Inventory->IsValidIndex(Index))
 			{
-				FIntPoint Tile;
-				Tile.X = TopLeftTile.X + x;
-				Tile.Y = TopLeftTile.Y + y;
-
-				int32 OccupiedIndex = TiletoIndex(Tile, Columns);
-
-				if (PersonalInventory.IsValidIndex(OccupiedIndex))
-				{
-					OccupiedIndices.Add(OccupiedIndex);
-				}
+				FDSItemInfo& Slot = (*Inventory)[Index];
+				Slot.ID = ItemInfo.ID;
+				Slot.isRotated = ItemInfo.isRotated;
 			}
 		}
 	}
+
+
+}
+
+
+bool UDSInventoryComponent::TryAddItem(const FDSItemInfo& ItemDataInfo, FIntPoint* OutTopLeft)
+{
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemDataInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
+	{
+		return false;
+	}
+
+	const int32 TotalSlots = InventoryInfo->Columns * InventoryInfo->Rows;
+	for (int32 Index = 0; Index < TotalSlots; ++Index)
+	{
+		if (IsRoomAvailable(ItemDataInfo, Index))
+		{
+			AddItemAt(ItemDataInfo, Index, false);
+
+			*OutTopLeft = IndexToTile(Index, InventoryInfo->Columns);
+
+			if (InventoryCategory == EInventoryCategory::PersonalVehicle)
+			{
+				DSEVENT_DELEGATE_INVOKE(OnVehicleInventorySlotUpdated, ItemDataInfo, *OutTopLeft, false);
+			}
+			else
+			{
+				DSEVENT_DELEGATE_INVOKE(OnItemInventorySlotUpdated, ItemDataInfo, *OutTopLeft, false);
+			}
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void UDSInventoryComponent::RemoveItem(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
 {
+	if (GetNetMode() != ENetMode::NM_ListenServer)
+	{
+		ExecuteRemoveItem(ItemInfo, TopLeftIndex);
+	}
+
+	ServerRPC_RemoveItem(ItemInfo, TopLeftIndex);
+
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+
+	if (InventoryCategory == EInventoryCategory::PersonalVehicle)
+	{
+		DSEVENT_DELEGATE_INVOKE(OnVehicleInventorySlotUpdated, ItemInfo, TopLeftIndex, true);
+	}
+	else
+	{
+		DSEVENT_DELEGATE_INVOKE(OnItemInventorySlotUpdated, ItemInfo, TopLeftIndex, true);
+	}
+}
+
+void UDSInventoryComponent::AddItemAtFromGrid(const FDSItemInfo& ItemInfo, int32 TopLeftIndex)
+{
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+
+	if (GetNetMode() != ENetMode::NM_ListenServer)
+	{
+		AddItemAt(ItemInfo, TopLeftIndex, true);
+	}
+	FIntPoint TopLeftTile = IndexToTile(TopLeftIndex, InventoryInfo->Columns);
+	ServerRPC_StoreItems(nullptr, ItemInfo, TopLeftTile);
+	if (InventoryCategory == EInventoryCategory::PersonalVehicle)
+	{
+		DSEVENT_DELEGATE_INVOKE(OnVehicleInventorySlotUpdated, ItemInfo, TopLeftTile, false);
+	}
+	else
+	{
+		DSEVENT_DELEGATE_INVOKE(OnItemInventorySlotUpdated, ItemInfo, TopLeftTile, false);
+	}
+}
+
+bool UDSInventoryComponent::StoreReceivedItem(ADSItemActor* ItemActor, const FDSItemInfo& ItemDataInfo)
+{
+	// Server 만 들어옴
+	FIntPoint StoredTopLeft;
+	bool bIsItemStored = TryAddItem(ItemDataInfo, &StoredTopLeft);
+
+	// 아이템이 저장됨 
+	if (bIsItemStored)
+	{
+		APawn* OwnerPawn = Cast<APawn>(GetOwner());
+		if (false == IsValid(OwnerPawn))
+		{
+			return false;
+		}
+		if (false == OwnerPawn->IsLocallyControlled())
+		{
+			ClientRPC_StoreItems(ItemDataInfo, StoredTopLeft, false);
+		}
+		else
+		{
+			DSEVENT_DELEGATE_INVOKE(OnItemAcquired, ItemDataInfo.ID, false);
+		}
+		// 전송 성공 알람
+		//DSEVENT_DELEGATE_INVOKE(OnInventoryFull, EAlertStatus::InventoryFull);
+		return true;
+	}
+	//else
+	{
+		// 전송 실패 알람
+		//DSEVENT_DELEGATE_INVOKE(OnInventoryFull, EAlertStatus::InventoryFull);
+		return false;
+	}
+
+	//return false;
+}
+
+void UDSInventoryComponent::RestoreItem(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
+{
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
+	{
+		return;
+	}
+
+	UDSGameDataSubsystem* Data = UDSGameDataSubsystem::Get(this);
+	check(Data);
+	FDSItemData* ItemData = static_cast<FDSItemData*>(Data->GetDataRowByID(EDataTableType::ItemData, ItemInfo.ID));
+	if (nullptr == ItemData)
+	{
+		return;
+	}
+	const FIntPoint Dimensions = ItemData->Dimensions;
+	const FIntPoint FinalSize = ItemInfo.isRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
+
+	for (int32 y = 0; y < FinalSize.Y; ++y)
+	{
+		for (int32 x = 0; x < FinalSize.X; ++x)
+		{
+			const FIntPoint Tile = TopLeftIndex + FIntPoint(x, y);
+			const int32 Index = TiletoIndex(Tile, InventoryInfo->Columns);
+
+			if (Inventory->IsValidIndex(Index))
+			{
+				FDSItemInfo& Slot = (*Inventory)[Index];
+				Slot.ID = ItemInfo.ID;
+				Slot.isRotated = ItemInfo.isRotated;
+			}
+		}
+	}
+
+	if (InventoryCategory == EInventoryCategory::PersonalVehicle)
+	{
+		DSEVENT_DELEGATE_INVOKE(OnVehicleInventorySlotUpdated, ItemInfo, TopLeftIndex, false);
+	}
+	else
+	{
+		DSEVENT_DELEGATE_INVOKE(OnItemInventorySlotUpdated, ItemInfo, TopLeftIndex, false);
+	}
+}
+
+void UDSInventoryComponent::RestoreItem(const FDSItemInfo& ItemInfo)
+{
+	// Server만 들어온다
+	FIntPoint StoredTopLeft;
+	bool bIsItemStored = TryAddItem(ItemInfo, &StoredTopLeft);
+
+	// 아이템이 저장됨 
+	if (bIsItemStored && false == GetOwner()->HasAuthority())
+	{
+		ClientRPC_StoreItems(ItemInfo, StoredTopLeft, true);
+	}
+}
+
+bool UDSInventoryComponent::IsItemAtIndex(int32 Index, EInventoryCategory InventoryCategory)
+{
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	if (nullptr == Inventory)
+	{
+		return false;
+	}
+	if (false == Inventory->IsValidIndex(Index))
+	{
+		return false;
+	}
+
+	return (*Inventory)[Index].ID > 0;
+
+}
+
+void UDSInventoryComponent::ExecuteRemoveItem(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
+{
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
+	{
+		return;
+	}
+
 	UDSGameDataSubsystem* DataManager = UDSGameDataSubsystem::Get(this);
 	check(DataManager);
-
 	FDSItemData* ItemData = static_cast<FDSItemData*>(DataManager->GetDataRowByID(EDataTableType::ItemData, ItemInfo.ID));
-
 	if (nullptr == ItemData)
 	{
 		return;
 	}
 
 	const FIntPoint Dimensions = ItemData->Dimensions;
-	const bool bIsRotated = ItemInfo.isRotated;
-	const FIntPoint FinalSize = bIsRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
-
-	const int32 Columns = PersonalInventoryInfo.Columns;
+	const FIntPoint FinalSize = ItemInfo.isRotated ? FIntPoint(Dimensions.Y, Dimensions.X) : Dimensions;
 
 	for (int32 y = 0; y < FinalSize.Y; ++y)
 	{
 		for (int32 x = 0; x < FinalSize.X; ++x)
 		{
-			FIntPoint Tile = FIntPoint(TopLeftIndex.X + x, TopLeftIndex.Y + y);
-			int32 Index = TiletoIndex(Tile, Columns);
+			const FIntPoint Tile = TopLeftIndex + FIntPoint(x, y);
+			const int32 Index = TiletoIndex(Tile, InventoryInfo->Columns);
 
-			if (PersonalInventory.IsValidIndex(Index))
+			if (Inventory->IsValidIndex(Index))
 			{
-				FDSItemInfo& Slot = PersonalInventory[Index];
+				FDSItemInfo& Slot = (*Inventory)[Index];
 				Slot.ID = 0;
 				Slot.isRotated = false;
 			}
 		}
 	}
-	RegisterItemToAllItems();
-	DSEVENT_DELEGATE_INVOKE(OnInventoryChanged);
 }
 
-bool UDSInventoryComponent::StoreItems(ADSItemActor* ItemActor,const FDSItemInfo &ItemData)
+void UDSInventoryComponent::ExecuteItemUse(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
 {
-	bool bIsItemStored = false;
-	for (int32 Index = 0; Index < PersonalInventoryInfo.Columns * PersonalInventoryInfo.Rows; ++Index)
-	{
-		bIsItemStored = IsRoomAvailable(ItemData, Index);
-		if(bIsItemStored)
-		{
-			AddItemAt(ItemData, Index);
-			DS_LOG(DSItemLog, Warning, TEXT("StoreItems"));
-			break;
-		}
-	}
+	UWorld* World = GetWorld();
+	check(World);
 
-	// 아이템이 저장됨 
-	if (bIsItemStored)
+	// 아이템 사용
+	OnItemUsed(ItemInfo.ID);
+
+	// 서버 인벤토리에서 삭제
+	ExecuteRemoveItem(ItemInfo, TopLeftIndex);
+
+	// ClientRPC_RemoveItem(ItemInfo, TopLeftIndex);
+
+	APlayerController* LocalPlayertController = GetController<APlayerController>();
+
+	if (IsValid(LocalPlayertController))
 	{
-		// 🔹 리슨 서버에서는 별도의 RPC 호출 없이 로컬에서 처리
-		if (GetOwner()->HasAuthority())
+		//모든 클라이언트를 가지고와서 이펙트 사용!!
+		for (APlayerController* PlayerController : TActorRange<APlayerController>(GetWorld()))
 		{
-			if (IsValid(ItemActor))
+			if (IsValid(PlayerController) && LocalPlayertController != PlayerController)
 			{
-				ItemActor->SetLifeSpan(0.3f);
+				if (!PlayerController->IsLocalController())
+				{
+					ADSCharacter* OtherPlayer = Cast<ADSCharacter>(PlayerController->GetPawn());
+					if (OtherPlayer)
+					{
+						//이펙트 실행
+					}
+				}
 			}
-			return bIsItemStored;
 		}
-
-		ServerRPC_StoreItems(ItemActor, ItemData, PersonalInventory.Num());
 	}
-	return bIsItemStored;
 }
 
-bool UDSInventoryComponent::ServerRPC_StoreItems_Validate(ADSItemActor* ItemActor, const FDSItemInfo& ItemData, int32 ClientItemCount)
+bool UDSInventoryComponent::ServerRPC_StoreItems_Validate(ADSItemActor* ItemActor, const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
 {
-
-	if (GetNetMode() != ENetMode::NM_ListenServer)
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
 	{
-		//클라이언트만 검사한다. 서버는 항상 참이다.
-		if (PersonalInventory.Num() != ClientItemCount - 1)
-		{
-			//뒤에 들어간 아이템을 제거하면 된다.
-			ClientRPC_RollbackItems(false, FDSItemInfo());
-		}
+		return false;
 	}
 
+	UDSGameDataSubsystem* Data = UDSGameDataSubsystem::Get(this);
+	check(Data);
+	FDSItemData* ItemData = static_cast<FDSItemData*>(Data->GetDataRowByID(EDataTableType::ItemData, ItemInfo.ID));
+	if (nullptr == ItemData)
+	{
+		return false;
+	}
+
+	const FIntPoint FinalSize = ItemInfo.isRotated ? FIntPoint(ItemData->Dimensions.Y, ItemData->Dimensions.X) : ItemData->Dimensions;
+
+	// 아이템 크기 만큼 모든 슬롯을 검사
+	for (int32 y = 0; y < FinalSize.Y; ++y)
+	{
+		for (int32 x = 0; x < FinalSize.X; ++x)
+		{
+			FIntPoint Tile = TopLeftIndex + FIntPoint(x, y);
+			int32 CheckIdx = TiletoIndex(Tile, InventoryInfo->Columns);
+
+			if (!Inventory->IsValidIndex(CheckIdx)) return false;
+
+			const FDSItemInfo& CheckSlot = (*Inventory)[CheckIdx];
+			if (CheckSlot.ID != 0 || CheckSlot.isRotated != false)
+			{
+				// 다른 아이템이 있으면 롤백
+				ClientRPC_RollbackItems(true, ItemInfo, TopLeftIndex);
+				return false;
+			}
+		}
+	}
 	return true;
 }
 
-void UDSInventoryComponent::ServerRPC_StoreItems_Implementation(ADSItemActor* ItemActor, const FDSItemInfo& ItemData, int32 ClientItemCount)
+void UDSInventoryComponent::ServerRPC_StoreItems_Implementation(ADSItemActor* ItemActor, const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
 {
-
 	// 전용 서버에서도 아이템을 저장하도록 수정
-	PersonalInventory.Add(ItemData);
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
+	{
+		return;
+	}
+	AddItemAt(ItemInfo, TiletoIndex(TopLeftIndex, InventoryInfo->Columns), false);
 
 	if (IsValid(ItemActor))
 	{
@@ -437,17 +655,156 @@ void UDSInventoryComponent::ServerRPC_StoreItems_Implementation(ADSItemActor* It
 	}
 }
 
-void UDSInventoryComponent::ClientRPC_RollbackItems_Implementation(bool bIsPlus, FDSItemInfo ItemData)
+bool UDSInventoryComponent::ServerRPC_UseItem_Validate(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
 {
-	if (false == PersonalInventory.IsEmpty())
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
 	{
-		if (false == bIsPlus)
+		return false;
+	}
+
+	// 전체 타일 검증
+	UDSGameDataSubsystem* Data = UDSGameDataSubsystem::Get(this);
+	check(Data);
+	FDSItemData* ItemData = static_cast<FDSItemData*>(Data->GetDataRowByID(EDataTableType::ItemData, ItemInfo.ID));
+	if (nullptr == ItemData)
+	{
+		return false;
+	}
+
+	const FIntPoint FinalSize = ItemInfo.isRotated ? FIntPoint(ItemData->Dimensions.Y, ItemData->Dimensions.X) : ItemData->Dimensions;
+
+	for (int32 y = 0; y < FinalSize.Y; ++y)
+	{
+		for (int32 x = 0; x < FinalSize.X; ++x)
 		{
-			PersonalInventory.Pop();  //뒤에 있는 개수를 뺀다.
-		}
-		else
-		{
-			PersonalInventory.Add(ItemData);
+			FIntPoint Tile = TopLeftIndex + FIntPoint(x, y);
+			int32 CheckIdx = TiletoIndex(Tile, InventoryInfo->Columns);
+
+			if (false == Inventory->IsValidIndex(CheckIdx))
+			{
+				return false;
+			}
+
+			const FDSItemInfo& CheckSlot = (*Inventory)[CheckIdx];
+			if (CheckSlot.ID != ItemInfo.ID || CheckSlot.isRotated != ItemInfo.isRotated)
+			{
+				ClientRPC_RollbackItems(true, ItemInfo, TopLeftIndex);
+				return false;
+			}
 		}
 	}
+
+	return true;
 }
+
+void UDSInventoryComponent::ServerRPC_UseItem_Implementation(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
+{
+	ExecuteItemUse(ItemInfo, TopLeftIndex);
+}
+
+bool UDSInventoryComponent::ServerRPC_RemoveItem_Validate(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
+{
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
+	{
+		return false;
+	}
+
+	// 전체 타일 검증
+	UDSGameDataSubsystem* Data = UDSGameDataSubsystem::Get(this);
+	check(Data);
+	FDSItemData* ItemData = static_cast<FDSItemData*>(Data->GetDataRowByID(EDataTableType::ItemData, ItemInfo.ID));
+	if (nullptr == ItemData)
+	{
+		return false;
+	}
+
+	const FIntPoint FinalSize = ItemInfo.isRotated ? FIntPoint(ItemData->Dimensions.Y, ItemData->Dimensions.X) : ItemData->Dimensions;
+
+	for (int32 y = 0; y < FinalSize.Y; ++y)
+	{
+		for (int32 x = 0; x < FinalSize.X; ++x)
+		{
+			FIntPoint Tile = TopLeftIndex + FIntPoint(x, y);
+			int32 CheckIdx = TiletoIndex(Tile, InventoryInfo->Columns);
+
+			if (false == Inventory->IsValidIndex(CheckIdx))
+			{
+				return false;
+			}
+
+			const FDSItemInfo& CheckSlot = (*Inventory)[CheckIdx];
+			if (CheckSlot.ID != ItemInfo.ID || CheckSlot.isRotated != ItemInfo.isRotated)
+			{
+				ClientRPC_RollbackItems(true, ItemInfo, TopLeftIndex);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+void UDSInventoryComponent::ServerRPC_RemoveItem_Implementation(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
+{
+	// 서버 인벤토리에서 삭제
+	ExecuteRemoveItem(ItemInfo, TopLeftIndex);
+}
+
+void UDSInventoryComponent::ClientRPC_StoreItems_Implementation(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex, bool bRestore)
+{
+
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+	TArray<FDSItemInfo>* Inventory = GetInventoryArray(InventoryCategory);
+	FPersonalInventoryInfo* InventoryInfo = GetInventoryInfo(InventoryCategory);
+	if (nullptr == Inventory || nullptr == InventoryInfo)
+	{
+		return;
+	}
+	AddItemAt(ItemInfo, TiletoIndex(TopLeftIndex, InventoryInfo->Columns), false);
+	if (false == bRestore)
+	{
+		DSEVENT_DELEGATE_INVOKE(OnItemAcquired, ItemInfo.ID, false);
+	}
+	if (InventoryCategory == EInventoryCategory::PersonalVehicle)
+	{
+		DSEVENT_DELEGATE_INVOKE(OnVehicleInventorySlotUpdated, ItemInfo, TopLeftIndex, false);
+	}
+	else
+	{
+		DSEVENT_DELEGATE_INVOKE(OnItemInventorySlotUpdated, ItemInfo, TopLeftIndex, false);
+	}
+}
+
+void UDSInventoryComponent::ClientRPC_RemoveItem_Implementation(const FDSItemInfo& ItemInfo, FIntPoint TopLeftIndex)
+{
+	ExecuteRemoveItem(ItemInfo, TopLeftIndex);
+	EInventoryCategory InventoryCategory = GetCategoryByItemID(ItemInfo.ID);
+
+	if (InventoryCategory == EInventoryCategory::PersonalVehicle)
+	{
+		DSEVENT_DELEGATE_INVOKE(OnVehicleInventorySlotUpdated, ItemInfo, TopLeftIndex, true);
+	}
+	else
+	{
+		DSEVENT_DELEGATE_INVOKE(OnItemInventorySlotUpdated, ItemInfo, TopLeftIndex, true);
+	}
+}
+
+void UDSInventoryComponent::ClientRPC_RollbackItems_Implementation(bool bIsPlus, const FDSItemInfo& ItemData, FIntPoint TopLeftIndex)
+{
+	if (false == bIsPlus)
+	{
+		RestoreItem(ItemData, TopLeftIndex);
+	}
+	else
+	{
+		RemoveItem(ItemData, TopLeftIndex);
+	}
+}
+

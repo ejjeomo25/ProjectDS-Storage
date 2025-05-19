@@ -1,6 +1,7 @@
 // Default
 #include "UI/Inventory/DSInventoryGridWidget.h"
 
+<<<<<<< HEAD
 // UE
 #include "Components/PanelWidget.h"
 #include "Components/CanvasPanelSlot.h"
@@ -258,3 +259,5 @@ FIntPoint UDSInventoryGridWidget::MousePositionInIntile(FVector2D MousePosition,
 }
 
 
+=======
+>>>>>>> 6d97a8e7eb31f849c4f7006f89fed6a9f4c3c463

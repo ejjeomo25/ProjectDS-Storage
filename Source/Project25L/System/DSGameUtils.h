@@ -36,7 +36,14 @@ public:
 	
 	static bool IsLocallyExecutable(const ACharacter* Character);
 	static void LoadSpreadOffset(FString Path, float SpreadCoef);
-
+	
+	/**
+	* @details 두 벡터간의 사이각을 얻을 수 있는 함수
+	* @param[in] A FromVector
+	* @param[in] B ToVector
+	* @return float 두 벡터간의 각도
+	*/
+	static float GetSeparationAngle(const FVector& A,const FVector& B);
 public:
 	/**
 	* @details PlayerController을 넘겼을 때 캐릭터를 리턴하는 함수

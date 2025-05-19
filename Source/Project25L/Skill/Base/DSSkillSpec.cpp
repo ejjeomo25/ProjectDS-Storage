@@ -34,7 +34,6 @@ void FDSSkillActivationInfo::SetActivationRejected()
 // ---------------------------------------------------- FDSSkillSpecHandle ----------------------------------------------------
 void FDSSkillSpecHandle::GenerateNewHandle()
 {
-	// Must be in C++ to avoid duplicate statics accross execution units
 	static int32 GHandle = 1;
 	Handle = GHandle++;
 }
@@ -117,7 +116,7 @@ void FDSSkillSpec::PreReplicatedRemove(const FDSSkillSpecContainer& InArraySeria
 {
 	if (true == IsValid(InArraySerializer.Owner))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("PreReplicatedRemove called for Skill: %s, Owner : %s"), *GetDebugString(), *InArraySerializer.Owner->GetName());
+		// UE_LOG(LogTemp, Warning, TEXT("PreReplicatedRemove called for Skill: %s, Owner : %s"), *GetDebugString(), *InArraySerializer.Owner->GetName());
 		InArraySerializer.Owner->OnRemoveSkill(*this);
 	}
 }
@@ -126,7 +125,7 @@ void FDSSkillSpec::PostReplicatedAdd(const FDSSkillSpecContainer& InArraySeriali
 {
 	if (true == IsValid(InArraySerializer.Owner))
 	{
-		DS_LOG(DSSkillLog, Log , TEXT("PostReplicatedAdd called for Skill: %s, Owner : %s"), *GetDebugString(), *InArraySerializer.Owner->GetName());
+		// DS_LOG(DSSkillLog, Log , TEXT("PostReplicatedAdd called for Skill: %s, Owner : %s"), *GetDebugString(), *InArraySerializer.Owner->GetName());
 		InArraySerializer.Owner->OnAddSkill(*this);
 	}
 }

@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "Game/DSGameState.h"
 
 // UE
@@ -13,6 +13,7 @@
 ADSGameState::ADSGameState()
 	: Super()
 	, SpawnedPlayerCount(0)
+	, bIsSpawned(false)
 {
 }
 
@@ -27,9 +28,11 @@ void ADSGameState::AddPlayerState(APlayerState* PlayerState)
 		// 서버 환경에서 검사
 		if (SpawnedPlayerCount >= MaxPlayerCount)
 		{
+			FTimerHandle WaitTimerHanle;
+
 			UWorld* World = GetWorld();
 			check(World);
-			World->GetTimerManager().SetTimerForNextTick(this, &ThisClass::CheckSpawnedCharacter);
+			World->GetTimerManager().SetTimer(WaitTimerHanle, this, &ThisClass::CheckSpawnedCharacter, 3.f);
 		}
 
 	}
@@ -40,14 +43,21 @@ void ADSGameState::OnRep_SpawnedPlayerCount()
 	//OnRep으로 들어온 SpawnedPlayerCount를 수 세고,
 	if (SpawnedPlayerCount >= MaxPlayerCount)
 	{
+		FTimerHandle WaitTimerHanle;
+
 		UWorld* World = GetWorld();
 		check(World);
-		World->GetTimerManager().SetTimerForNextTick(this, &ThisClass::CheckSpawnedCharacter);
+		World->GetTimerManager().SetTimer(WaitTimerHanle, this, &ThisClass::CheckSpawnedCharacter, 3.f);
 	}
 }
 
 void ADSGameState::CheckSpawnedCharacter()
 {
+
+	if (bIsSpawned)
+	{
+		return;
+	}
 
 	UWorld* World = GetWorld();
 	check(World);
@@ -55,7 +65,8 @@ void ADSGameState::CheckSpawnedCharacter()
 	//아직 PlayerArray가 초기화되지 않았을 경우에, 다음 틱에서 수행
 	if (PlayerArray.Num() < MaxPlayerCount)
 	{
-		World->GetTimerManager().SetTimerForNextTick(this, &ThisClass::CheckSpawnedCharacter);
+		FTimerHandle WaitTimerHanle;
+		World->GetTimerManager().SetTimer(WaitTimerHanle, this, &ThisClass::CheckSpawnedCharacter, 3.f);
 		return;
 	}
 
@@ -74,7 +85,8 @@ void ADSGameState::CheckSpawnedCharacter()
 	// Pawn이 준비되지 않았을 경우 준비가 안됐음을 의미
 	if (false == bAllCharactersReady)
 	{
-		World->GetTimerManager().SetTimerForNextTick(this, &ThisClass::CheckSpawnedCharacter);
+		FTimerHandle WaitTimerHanle;
+		World->GetTimerManager().SetTimer(WaitTimerHanle, this, &ThisClass::CheckSpawnedCharacter, 3.f);
 	}
 	else
 	{
@@ -85,6 +97,9 @@ void ADSGameState::CheckSpawnedCharacter()
 			if (IsValid(Character))
 			{
 				//모든 캐릭터가 스폰되었다는 델리게이트를 달아도 된다.
+				static int32 Count = 0;
+				DS_LOG(DSLog, Log, TEXT("%s %d"), *Character->GetName(), Count);
+				bIsSpawned = true;
 				DSEVENT_DELEGATE_INVOKE(GameEvent.OnCharacterSpawned);
 				Character->InitializeUI();
 			}

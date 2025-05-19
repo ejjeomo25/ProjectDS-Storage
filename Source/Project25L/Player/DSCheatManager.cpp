@@ -1,4 +1,4 @@
-//Default
+﻿//Default
 #include "Player/DSCheatManager.h"
 
 //UE
@@ -212,6 +212,44 @@ void UDSCheatManager::DisplaySkillCooltime(const int32 InputID)
 	#endif
 }
 
+void UDSCheatManager::DisplaySkillCooltimeFromTag(const FGameplayTag SkillTag)
+{
+	#if USING_CHEAT_MANAGER
+	DS_LOG(DSSkillLog, Warning, TEXT("DisplaySkillCooltime"));
+
+	if (ADSPlayerController* PlayerController = Cast<ADSPlayerController>(GetOuterAPlayerController()))
+	{
+		if (ADSCharacter* Character = PlayerController->GetPawn<ADSCharacter>())
+		{
+			if (UDSSkillControlComponent* SkillControlComponent = Character->GetSkillControlComponent())
+			{
+				if (FDSSkillSpec* SkillSpec = SkillControlComponent->FindSkillSpecFromTag(SkillTag))
+				{
+					if (PlayerController->GetNetMode() == NM_Client)
+					{
+						// 클라이언트일 경우 자동으로 서버에 치트 명령어를 전송
+						PlayerController->ServerRPC_Cheat(FString::Printf(TEXT("DisplaySkillCooltime %s"), *SkillTag.ToString()));
+						return;
+					}
+					for (auto Instance : SkillSpec->GetSkillInstances())
+					{
+						if (IsValid(Instance))
+						{
+							if (Instance->IsActive())
+							{
+								float TimeRemaining, Duration;
+								Instance->GetCooldownTimeRemainingAndDuration(SkillSpec->Handle, SkillControlComponent->SkillActorInfo.Get(), TimeRemaining, Duration);
+								DS_LOG(DSSkillLog, Warning, TEXT("DisplaySkillCooltime - TimeRemaining[%f],  Duration[%f]"), TimeRemaining, Duration);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	#endif
+}
+
 void UDSCheatManager::StoreItems(int32 PlayerID, int32 ItemID, int32 ItemCount)
 {
 #if USING_CHEAT_MANAGER
@@ -232,6 +270,14 @@ void UDSCheatManager::StoreItems(int32 PlayerID, int32 ItemID, int32 ItemCount)
 				if (IsValid(Character))
 				{
 					//아이템 저장할 수 있도록 함.
+					for (int i = 0; i < ItemCount; ++i)
+					{
+						bool bIsItemStored = Character->StoreItem(ItemID);
+						if (bIsItemStored)
+						{
+							DS_LOG(DSItemLog, Warning, TEXT("Store Item"));
+						}
+					}
 				}
 			}
 			break;

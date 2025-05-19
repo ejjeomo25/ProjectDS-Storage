@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
 
 // Game
-#include "Blueprint/UserWidget.h"
+#include "UI/Base/DSUserWidget.h"
 
 // UHT
 #include "DSMenu.generated.h"
@@ -14,7 +14,7 @@ class UVerticalBox;
 class UButton;
 
 UCLASS()
-class PROJECT25L_API UDSMenu : public UUserWidget
+class PROJECT25L_API UDSMenu : public UDSUserWidget
 {
 	GENERATED_BODY()
 

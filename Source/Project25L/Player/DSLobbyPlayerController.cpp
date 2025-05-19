@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "Player/DSLobbyPlayerController.h"
 
 // UE
@@ -9,7 +9,7 @@
 #include "GameData/GameplayTag/DSGameplayTags.h"
 #include "System/DSLocalPlayerSubsystem.h"
 #include "System/DSUIManagerSubsystem.h"
-#include "UI/DSWidgetLayer.h"
+#include "UI/Base/DSWidgetLayer.h"
 #include "UI/Menu/DSMenu.h"
 
 #include "DSLogChannels.h"
@@ -47,7 +47,7 @@ void ADSLobbyPlayerController::RefreshPlayerInfo(int32 CurrentButtonIndex, int32
 
 	check(UIManagerSubsystem);
 
-	UDSMenu* MenuWidget = Cast<UDSMenu>(UIManagerSubsystem->GetTopLayer(FDSTags::GetDSTags().UI_Layer_Game_Main));
+	UDSMenu* MenuWidget = Cast<UDSMenu>(UIManagerSubsystem->GetTopLayer(FDSTags::GetDSTags().UI_Layer_Persistent_Main));
 
 	if (IsValid(MenuWidget))
 	{

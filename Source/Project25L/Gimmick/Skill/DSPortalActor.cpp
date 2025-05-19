@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "DSPortalActor.h"
 
 // UE
@@ -50,6 +50,11 @@ void ADSPortalActor::SetExitLocation(FVector InExitLocation)
     ExitLocation = InExitLocation;
 }
 
+void ADSPortalActor::SetPortalSurfaceType(EDSPortalSurfaceType InPortalSurfaceType)
+{
+    PortalSurfaceType = InPortalSurfaceType;
+}
+
 void ADSPortalActor::OnPortalSpawned()
 {
     SphereMeshComponent->SetVisibility(true);
@@ -88,6 +93,7 @@ void ADSPortalActor::ServerRPC_DeactivateEffect_Implementation()
 {
     MulticastRPC_DeactivateEffect();
     bisPortalActive = false;
+    SphereMeshComponent->SetVisibility(false);
 }
 
 void ADSPortalActor::MulticastRPC_DeactivateEffect_Implementation()
@@ -135,7 +141,13 @@ void ADSPortalActor::OnPortalOverlap(UPrimitiveComponent* OverlappedComp, AActor
         {
             if (IsValid(Player))
             {
+                if(PortalSurfaceType == EDSPortalSurfaceType::Wall)
+                {
+					const FVector ForwardVector = -GetActorForwardVector();
+					Player->SetActorRotation(ForwardVector.Rotation());
+                }
                 Player->SetActorLocation(ExitLocation);
+                DS_LOG(DSSkillLog, Log, TEXT("ExitLocation : %s"), *ExitLocation.ToString());
             }
         }),
         TeleportDelayTime, false);

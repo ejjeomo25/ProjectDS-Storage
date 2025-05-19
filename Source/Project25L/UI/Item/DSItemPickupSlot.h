@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
 
-// UE
-#include "Blueprint/UserWidget.h"
+// Game
+#include "UI/Base/DSUserWidget.h"
 
 // UHT
 #include "DSItemPickupSlot.generated.h"
@@ -14,7 +14,7 @@ class UTextBlock;
 class UDSInventoryComponent;
 
 UCLASS()
-class PROJECT25L_API UDSItemPickupSlot : public UUserWidget
+class PROJECT25L_API UDSItemPickupSlot : public UDSUserWidget
 {
 	GENERATED_BODY()
 	

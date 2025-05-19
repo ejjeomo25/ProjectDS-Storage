@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 // Default
 #include "CoreMinimal.h"
 
 // UE
 #include "Components/PawnComponent.h"
 #include "Engine/DamageEvents.h"
+#include "Net/Serialization/FastArraySerializer.h"
 
 // Game
 #include "GameData/DSCharacterStat.h"
@@ -13,14 +14,22 @@
 #include "Interface/DamageableInterface.h"
 #include "Interface/HealableInterface.h"
 
+
 // UHT
 #include "DSStatComponent.generated.h"
 
 /** 게임 내 버프 효과 정보를 저장하는 구조체. */
 USTRUCT(BlueprintType)
-struct FBuffEntry
+struct FBuffEntry : public FFastArraySerializerItem
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
+
+	FBuffEntry() = default;
+
+	FBuffEntry(EDSStatType InStatType, EOperationType InOperationType, int32 InBuffID, float InBuffValue)
+		: StatType(InStatType), OperationType(InOperationType), BuffID(InBuffID), BuffValue(InBuffValue)
+	{
+	}
 
 	/** 버프가 적용될 스탯 유형. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DSSettings | Buff")
@@ -37,6 +46,64 @@ struct FBuffEntry
 	/** 버프 값. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DSSettings | Buff")
 	float BuffValue;
+
+	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
+	{
+		Ar << StatType;
+		Ar << OperationType;
+		return true;
+	}
+};
+
+template<>
+struct TStructOpsTypeTraits<FBuffEntry> : public TStructOpsTypeTraitsBase2<FBuffEntry>
+{
+	enum
+	{
+		WithNetSerializer = true
+	};
+};
+
+USTRUCT()
+struct FBuffArray : public FFastArraySerializer
+{
+    GENERATED_USTRUCT_BODY()
+
+	FBuffArray() = default;
+
+	FBuffArray(UDSStatComponent* InOwner)
+		: Owner(InOwner)
+	{
+	}
+
+    UPROPERTY(VisibleAnywhere, Category = "DSSettings | Buff")
+    TArray<FBuffEntry> Entries;
+
+	UPROPERTY(NotReplicated)
+	TObjectPtr<UDSStatComponent> Owner;
+
+	/** 다음 버프에 부여할 고유 ID */
+	int32 NextBuffID;
+
+	/** 각 버프의 제거 타이머 핸들을 저장하는 맵 (버프 ID -> 타이머 핸들) */
+	TMap<int32, FTimerHandle> BuffTimerHandles;
+
+    /*void ApplyBuff(EDSStatType InStatType, EOperationType InOperationType, float InBuffValue, float InDuration);
+	void RemoveBuff(int32 InBuffID);*/
+	
+	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParms)
+	{
+		return FFastArraySerializer::FastArrayDeltaSerialize<FBuffEntry, FBuffArray>(Entries, DeltaParms, *this);
+	}
+};
+
+template<>
+struct TStructOpsTypeTraits<FBuffArray> : public TStructOpsTypeTraitsBase2<FBuffArray>
+{
+	enum
+	{ 
+		WithNetDeltaSerializer = true 
+	};
 };
 
 /** 게임 DamageEvent */
@@ -74,6 +141,8 @@ class PROJECT25L_API UDSStatComponent : public UPawnComponent, public IDamageabl
 	GENERATED_BODY()
 	
 public:
+	friend struct FBuffArray;
+
 	UDSStatComponent(const FObjectInitializer& ObjectInitializer);
 
 	// StatUI를 관리하기 위한 델리게이트 선언
@@ -207,8 +276,11 @@ protected:
 	float HP;
 
 	/** 활성화된 버프 항목들 */
-	UPROPERTY(VisibleAnywhere, Category = Category = "DSSettings | Buff", Transient)
-	TArray<FBuffEntry> ActiveBuffs;
+	//UPROPERTY(VisibleAnywhere, Category = "DSSettings | Buff", Transient)
+	//TArray<FBuffEntry> ActiveBuffs;
+
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "DSSettings | Buff", Transient)
+    FBuffArray ActiveBuffs;
 
 	/** 다음 버프에 부여할 고유 ID */
 	int32 NextBuffID;

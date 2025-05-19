@@ -17,14 +17,17 @@
 UDSSkillBase::UDSSkillBase()
 	: ReplicationPolicy(ESkillReplicationPolicy::ReplicateYes)
 	, CurrentActorInfo(nullptr)
-	, bSkillHasCooltime(true)
 	, bSkillHasDuration(false)
 	, bCanTick(false)
+	, bIsActive(false)
+	, TickInterval(0.5f)
+	, ElapsedTime(0.f)
 {
 	StartWorldTime = -100.f;
 	InstancingPolicy = ESkillInstancingPolicy::InstancedPerExecution;
 	NetSecurityPolicy = ESkillNetSecurityPolicy::ClientOrServer;
 	NetExecutionPolicy = ESkillNetExecutionPolicy::ServerInitiated;
+	CooldownPolicy = ESkillCooldownPolicy::CooldownAfterActive;
 
 }
 
@@ -32,17 +35,39 @@ UDSSkillBase::UDSSkillBase(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer)
 	, ReplicationPolicy(ESkillReplicationPolicy::ReplicateYes)
 	, CurrentActorInfo(nullptr)
-	, bSkillHasCooltime(true)
 	, bSkillHasDuration(false)
+	, bCanTick(false)
+	, bIsActive(false)
+	, TickInterval(0.5f)
+	, ElapsedTime(0.f)
 {
 	StartWorldTime = -100.f;
 	InstancingPolicy = ESkillInstancingPolicy::InstancedPerExecution;
 	NetSecurityPolicy = ESkillNetSecurityPolicy::ClientOrServer;
 	NetExecutionPolicy = ESkillNetExecutionPolicy::ServerInitiated;
+	CooldownPolicy = ESkillCooldownPolicy::CooldownAfterActive;
+
 }
 
 void UDSSkillBase::SetRemoteInstanceHasEnded()
 {
+}
+
+void UDSSkillBase::BeginPlay()
+{
+	OnSkillInitialized();
+}
+
+void UDSSkillBase::Tick(float DeltaTime)
+{
+	ElapsedTime += DeltaTime;
+
+	if (ElapsedTime >= TickInterval)
+	{
+		InternalTick(DeltaTime);
+
+		ElapsedTime = 0.0f;
+	}
 }
 
 void UDSSkillBase::NotifyAvatarDestroyed()
@@ -51,7 +76,7 @@ void UDSSkillBase::NotifyAvatarDestroyed()
 }
 
 // 스킬이 SkillControlComponent에 등록될 때 호출됨
-void UDSSkillBase::OnAddSkill(const FDSSkillActorInfo* ActorInfo, ESkillType InSkillType,  const FDSSkillSpec& Spec)
+void UDSSkillBase::OnAddSkill(const FDSSkillActorInfo* ActorInfo, ESkillType& InSkillType,  const FDSSkillSpec& Spec)
 {
 	SetCurrentActorInfo(Spec.Handle, InSkillType, ActorInfo);
 	OnSkillInitialized();
@@ -92,14 +117,18 @@ void UDSSkillBase::ConfirmActivateSucceed()
 	}
 }
 
-void UDSSkillBase::SetCurrentActorInfo(const FDSSkillSpecHandle Handle, ESkillType InType, const FDSSkillActorInfo* ActorInfo) 
+void UDSSkillBase::SetCurrentActorInfo(const FDSSkillSpecHandle Handle, ESkillType& InType, const FDSSkillActorInfo* ActorInfo) 
 {
 	if(nullptr != ActorInfo)
 	{
 		CurrentActorInfo = ActorInfo;
 	}
 	CurrentSpecHandle = Handle;
-	CurrentSkillType = InType;
+	
+	if(CurrentSkillType != InType)
+	{
+		InType = InType == ESkillType::None ? CurrentSkillType : InType;
+	}
 }
 
 AActor* UDSSkillBase::GetSkillOwner() const
@@ -164,9 +193,16 @@ void UDSSkillBase::OnSkillInitialized()
 		{
 			MaxCooltime = SkillData->MaxCooltime;
 			AutoAimAngle = SkillData->AutoAimAngle;
-			AttackRange = SkillData->AttackRange;
-			InputThresholdOffset = SkillData->InputThresholdOffset;
+			SkillRadius = SkillData->SkillRadius;
 			SkillDuration = SkillData->SkillDuration;
+			SkillDamage = SkillData->Damage;
+			DodgeMaxSpeed = SkillData->MaxDodgeSpeed;
+			DodgeMinSpeed = SkillData->MinDodgeSpeed;
+
+			for (const auto& Elem : SkillData->Effects)
+			{
+				Effects.Add(Elem);
+			}
 		}
 	}
 }
@@ -248,7 +284,7 @@ void UDSSkillBase::PreActivate(const FDSSkillSpecHandle Handle, const FDSSkillAc
 	}
 }
 
-void UDSSkillBase::CallActivateSkill(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo)
+void UDSSkillBase::CallActivateSkill(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo )
 {
 	PreActivate(Handle, ActorInfo);
 	ActivateSkill(Handle, ActorInfo);
@@ -266,10 +302,13 @@ bool UDSSkillBase::CommitSkill(const FDSSkillSpecHandle Handle, const FDSSkillAc
 		return false; 
 	}
 
-	ApplyCooldown(ActorInfo);
+	if(ESkillCooldownPolicy::CooldownAfterActive == CooldownPolicy)
+	{
+		ApplyCooldown(ActorInfo);
+	}
+
 	ApplyCost(ActorInfo);
 
-	// Broadcast this commitment
 	ActorInfo->SkillControlComponent->NotifySkillCommit(this);
 
 	OnSkillActivated();
@@ -345,6 +384,11 @@ void UDSSkillBase::EndSkill(const FDSSkillSpecHandle Handle, const FDSSkillActor
 		MyWorld->GetLatentActionManager().RemoveActionsForObject(this);
 		// 이 객체에 의해 예약된 모든 타이머 제거
 		MyWorld->GetTimerManager().ClearAllTimersForObject(this);
+	}
+
+	if(ESkillCooldownPolicy::CooldownAfterEnd == GetCooldownPolicy())
+	{
+		ApplyCooldown(ActorInfo);
 	}
 
 	if (ESkillInstancingPolicy::NonInstanced != GetInstancingPolicy())
@@ -474,7 +518,7 @@ bool UDSSkillBase::CommitCheck(const FDSSkillSpecHandle Handle, const FDSSkillAc
 	// Spec이 유효하지 않으면 Commit 불가
 	if (false == bValidHandle || false == bValidActorInfoPieces || false == bValidSpecFound)
 	{
-		DS_LOG(DSSkillLog, Warning, TEXT("UGameplaySkill::CommitCheck provided an invalid handle or actor info or couldn't find ability spec: %s Handle Valid: %d ActorInfo Valid: %d Spec Not Found: %d"), *GetName(), bValidHandle, bValidActorInfoPieces, bValidSpecFound);
+		DS_LOG(DSSkillLog, Warning, TEXT("CommitCheck provided an invalid handle or actor info or couldn't find ability spec: %s Handle Valid: %d ActorInfo Valid: %d Spec Not Found: %d"), *GetName(), bValidHandle, bValidActorInfoPieces, bValidSpecFound);
 		return false;
 	}
 
@@ -505,7 +549,7 @@ bool UDSSkillBase::IsActive() const
 	// NonInstanced 스킬에서 이 함수를 호출하는 것은 잘못된 사용이며 대신 스킬 스펙(SkillSpec)에서 IsActive를 호출해야 함
 	if (ESkillInstancingPolicy::NonInstanced == GetInstancingPolicy())
 	{
-		DS_LOG(DSSkillLog, Warning, TEXT("UGameplayAbility::IsActive() called on %s NonInstanced ability, call IsActive on the Ability Spec instead"), *GetName());
+		// DS_LOG(DSSkillLog, Warning, TEXT("UGameplayAbility::IsActive() called on %s NonInstanced ability, call IsActive on the Ability Spec instead"), *GetName());
 	}
 
 	// NonInstanced 및 InstancedPerExecution 스킬은  인스턴스가 살아있기만 하면 활성 상태로 간주됨
@@ -528,56 +572,71 @@ void UDSSkillBase::ApplyCost(const FDSSkillActorInfo* ActorInfo)
 // -------------------------------------------------------------------------- Cooldown -------------------------------------------------------------------------- //
 void UDSSkillBase::GetCooldownTimeRemainingAndDuration(FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo, float& TimeRemaining, float& OutCooldownDuration) const
 {
+	if(CooldownPolicy == ESkillCooldownPolicy::None)
+	{
+		return;
+	}
+
 	TimeRemaining = 0.f;
 	OutCooldownDuration = 0.f;
 
-	if (true == bSkillHasCooltime)
+	UDSSkillControlComponent* const SkillControlComponent = ActorInfo->SkillControlComponent.Get();
+	if (true == IsValid(SkillControlComponent))
 	{
-		UDSSkillControlComponent* const SkillControlComponent = ActorInfo->SkillControlComponent.Get();
-		if(true == IsValid(SkillControlComponent)) 
+		UWorld* World = SkillControlComponent->GetWorld();
+		if (IsValid(World))
 		{
-			UWorld* World = SkillControlComponent->GetWorld();
-			if (IsValid(World))
+			const float CurrentTime = World->GetTimeSeconds();
+			const float Elapsed = CurrentTime - StartWorldTime;
+			if (Elapsed < MaxCooltime)
 			{
-				float CurrentTime = World->GetTimeSeconds();
-				float Elapsed = CurrentTime - StartWorldTime;
-				OutCooldownDuration = MaxCooltime;
-
-				// 남은 쿨타임은 Duration에서 경과 시간을 뺀 값 (음수이면 0으로 처리)
-				TimeRemaining = FMath::Max(OutCooldownDuration - Elapsed, 0.f);
+				UE_LOG(LogTemp, Warning, TEXT("Cooldown already active. Skip ApplyCooldown. Remaining: %f"),
+					MaxCooltime - (CurrentTime - StartWorldTime));
+				return;
 			}
+			OutCooldownDuration = MaxCooltime;
+
+			// 남은 쿨타임은 Duration에서 경과 시간을 뺀 값 (음수이면 0으로 처리)
+			TimeRemaining = FMath::Max(OutCooldownDuration - Elapsed, 0.f);
 		}
 	}
 }
 
 bool UDSSkillBase::CheckCooldown(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo) const
 {
-	// 스킬이 쿨타임을 가진다면, 현재 시간과 시작 시간의 차이를 계산
-	if (true == bSkillHasCooltime)
+	if(CooldownPolicy == ESkillCooldownPolicy::None)
 	{
-		UDSSkillControlComponent* const SkillControlComponent = ActorInfo->SkillControlComponent.Get();
-		if (true == IsValid(SkillControlComponent))
-		{
-			UWorld* World = SkillControlComponent->GetWorld();
-			if (IsValid(World))
-			{
-				float CurrentTime = World->GetTimeSeconds();
-				float Elapsed = CurrentTime - StartWorldTime;
+		return true;
+	}
 
-				// 아직 쿨타임이 남아 있다면 false를 반환
-				if (Elapsed < MaxCooltime)
-				{
-					DS_LOG(DSSkillLog, Warning, TEXT("CheckCooldown :: Cooldown Not Complete - Elapsed[%f], MaxCooltime[%f]"), Elapsed, MaxCooltime);
-					return false;
-				}
+	// 스킬이 쿨타임을 가진다면, 현재 시간과 시작 시간의 차이를 계산
+	UDSSkillControlComponent* const SkillControlComponent = ActorInfo->SkillControlComponent.Get();
+	if (true == IsValid(SkillControlComponent))
+	{
+		UWorld* World = SkillControlComponent->GetWorld();
+		if (IsValid(World))
+		{
+			float CurrentTime = World->GetTimeSeconds();
+			float Elapsed = CurrentTime - StartWorldTime;
+
+			// 아직 쿨타임이 남아 있다면 false를 반환
+			if (Elapsed < MaxCooltime)
+			{
+				return false;
 			}
 		}
 	}
+
 	return true;
 }
 
 void UDSSkillBase::ApplyCooldown(const FDSSkillActorInfo* ActorInfo)
 {
+	if(CooldownPolicy == ESkillCooldownPolicy::None)
+	{
+		return ;
+	}
+
 	UDSSkillControlComponent* const SkillControlComponent = ActorInfo->SkillControlComponent.Get();
 	if (true == IsValid(SkillControlComponent))
 	{
@@ -585,36 +644,7 @@ void UDSSkillBase::ApplyCooldown(const FDSSkillActorInfo* ActorInfo)
 		if (IsValid(World))
 		{
 			StartWorldTime = ActorInfo->SkillControlComponent->GetWorld()->GetTimeSeconds();
-			DS_LOG(DSSkillLog, Warning, TEXT("ApplyCooldown Function : StartWorldTime[%f]"), StartWorldTime);
 		}
 	}
 }
 // --------------------------------------------------------------------------
-
-/*
-void UDSSkillBase::StartSkillDuration(const FDSSkillSpecHandle& Handle, const FDSSkillActorInfo* ActorInfo)
-{
-	if (SkillDuration <= 0.f)
-	{
-		return;
-	}
-
-	UWorld* World = GetWorld();
-	if (IsValid(World))
-	{
-		World->GetTimerManager().SetTimer(DurationTimerHandle, [this, Handle, ActorInfo]()
-			{
-				const bool bReplicate = true;
-				const bool bWasCancelled = false;
-				EndSkill(Handle, ActorInfo, bReplicate, bWasCancelled);
-			}, SkillDuration, false);
-	}
-}
-*/
-void UDSSkillBase::OnSkillDurationFinished(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo)
-{
-	if (true == bSkillHasDuration && true == IsActive())
-	{
-		EndSkill(CurrentSpecHandle, CurrentActorInfo, false, false);
-	}
-}

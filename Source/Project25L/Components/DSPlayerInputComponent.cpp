@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "Components/DSPlayerInputComponent.h"
 
 // UE
@@ -78,47 +78,82 @@ void UDSPlayerInputComponent::SetupInputComponent(UInputComponent* InputComponen
 		DSInputComponent->BindSkillActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_PrimarySkill, this,
 			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Onging, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed );
 
-		DSInputComponent->BindSkillActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_SecondarySkill, this,
-			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Onging, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
-
 		DSInputComponent->BindSkillActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Skill1, this,
-			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Onging, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
+			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
 
 		DSInputComponent->BindSkillActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Skill2, this,
-			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Onging, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
+			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
 
 		DSInputComponent->BindSkillActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_UltimateSkill, this,
-			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Onging, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
+			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
 
 		DSInputComponent->BindSkillActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_FarmingSkill , this,
-			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Onging, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
+			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
+
+		DSInputComponent->BindSkillActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_DodgeSkill, this,
+			&UDSPlayerInputComponent::Input_Weapon_Attack_Started, &UDSPlayerInputComponent::Input_Weapon_Attack_Completed);
 
 		// FlightSkill
 		DSInputComponent->BindSingleActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Flight_Begin, ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skill_Flight_Begin);
 		DSInputComponent->BindSingleActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Flight_Up, ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Skill_Flight_Up);
-		DSInputComponent->BindSingleActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Flight_Up, ETriggerEvent::Completed, this, &UDSPlayerInputComponent::Input_Skill_Flight_Released);
 		DSInputComponent->BindSingleActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Flight_Down, ETriggerEvent::Triggered, this, &UDSPlayerInputComponent::Input_Skill_Flight_Down);
-		DSInputComponent->BindSingleActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Flight_Down, ETriggerEvent::Completed, this, &UDSPlayerInputComponent::Input_Skill_Flight_Released);
-		DSInputComponent->BindSingleActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Flight_Dodge, ETriggerEvent::Started, this, &UDSPlayerInputComponent::Input_Skill_Flight_Dodge);
-		DSInputComponent->BindDualActions(InputConfig, FDSTags::GetDSTags().InputTag_Skill_Flight_Boost, this, &UDSPlayerInputComponent::Input_Skill_Flight_Boost, &UDSPlayerInputComponent::Input_Skill_Flight_Boost_Released);
 	}
-
-	DSEVENT_DELEGATE_BIND(OnInputMappingChangedEvent, this, &UDSPlayerInputComponent::SetInputMappingContext);
 }
-
 void UDSPlayerInputComponent::SetInputMappingContext(EInputMappingContextType NewIMCType)
 {
-	APlayerController* PlayerController = GetController<APlayerController>();
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+
+	APlayerController* PlayerController = Character->GetController<APlayerController>();
+
 	if (false == IsValid(PlayerController) || false == IsValid(InputMappingContexts[NewIMCType]))
+	{
+		return;
+	}
+
+	ULocalPlayer * LocalPlayer = PlayerController->GetLocalPlayer();
+
+	if (false == IsValid(LocalPlayer))
+	{
+		return;
+	}
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer);
+	check(Subsystem);
+	
+	Subsystem->ClearAllMappings();
+	Subsystem->AddMappingContext(InputMappingContexts[NewIMCType], 0);
+}
+
+
+void UDSPlayerInputComponent::OnInputMappingChanged(bool bCanFly, bool bIsCompleted)
+{
+	if (false == bIsCompleted)
+	{
+		/* 완료되지 않으면, IMC를 교체하지 않는다.*/
+		return;
+	}
+
+	const EInputMappingContextType ChangedInputMaapingContextType = EInputMappingContextType::FlightIMC;
+	APlayerController* PlayerController = GetController<APlayerController>();
+
+	if (false == IsValid(PlayerController) || false == IsValid(InputMappingContexts[ChangedInputMaapingContextType]))
 	{
 		return;
 	}
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
 	check(Subsystem);
-	
-	Subsystem->ClearAllMappings();
-	Subsystem->AddMappingContext(InputMappingContexts[NewIMCType], 0);
+
+	if (bCanFly)
+	{
+		Subsystem->AddMappingContext(InputMappingContexts[ChangedInputMaapingContextType], 0);
+		/*캐릭터 Movement 에게 Movement Mode 변경하도록 전달*/
+	}
+	else
+	{
+
+		Subsystem->RemoveMappingContext(InputMappingContexts[ChangedInputMaapingContextType]);
+	}
 }
 
 void UDSPlayerInputComponent::InitialCharacterSetting()
@@ -131,8 +166,6 @@ void UDSPlayerInputComponent::InitialCharacterSetting()
 
 void UDSPlayerInputComponent::OnUnregister()
 {
-	DSEVENT_DELEGATE_REMOVE(OnInputMappingChangedEvent, this);
-
 	Super::OnUnregister();
 }
 
@@ -169,8 +202,6 @@ void UDSPlayerInputComponent::Input_Move(const FInputActionValue& InputActionVal
 	Pawn = PlayerController->GetPawn();
 	Pawn->AddMovementInput(ForwardDirection, MovementVector.Y);
 	Pawn->AddMovementInput(RightDirection, MovementVector.X);
-
-	SetFlightDirection(MovementVector);
 }
 
 
@@ -191,6 +222,8 @@ void UDSPlayerInputComponent::Input_Look_Mouse(const FInputActionValue& InputAct
 		return;
 	}
 
+	//Y값 + 20.f ~ -20.f 사이로 제한 (위 아래 -> 빼놓기.)
+	
 	if (Value.X != 0.0f)
 	{
 		Pawn->AddControllerYawInput(Value.X * MouseSensitivity);
@@ -316,6 +349,7 @@ void UDSPlayerInputComponent::Input_ToggleSit(const FInputActionValue& InputActi
 void UDSPlayerInputComponent::Input_FastRun(const FInputActionValue& InputActionValue)
 {
 	SetSpeed(ESpeedType::Sprint);
+	DS_LOG(DSInputLog, Log, TEXT("Sprint !!!\n"));
 }
 
 void UDSPlayerInputComponent::Input_StopFastRun(const FInputActionValue& InputActionValue)
@@ -365,9 +399,6 @@ void UDSPlayerInputComponent::Input_Weapon_Toggle(const FInputActionValue& Input
 
 void UDSPlayerInputComponent::Input_Weapon_Attack_Started(const FInputActionValue& InputActionValue, FGameplayTag InputTag)
 {
-	//留뚯빟臾닿린瑜ㅺ퀬 덉 딅떎硫
-	//臾닿린瑜좊떎.
-
 	ADSCharacter* Character = GetPawn<ADSCharacter>();
 
 	if (IsValid(Character))
@@ -377,14 +408,15 @@ void UDSPlayerInputComponent::Input_Weapon_Attack_Started(const FInputActionValu
 		if (IsValid(ArmedCharacter))
 		{
 			bool bIsEquipped = ArmedCharacter->GetIsEquipped();
-			
+
+			// 그 외에는 무기를 꺼낸다.
 			if (bIsEquipped == false)
 			{
-				ArmedCharacter->Equip();
+				ArmedCharacter->PlayWeaponActionMontage(EWeaponState::Equipped);
 			}
 		}
 
-		HoldTime = Character->GetInputThreshold();
+		HoldTime = Character->GetInputThreshold(InputTag);
 	}
 
 	UWorld* World = GetWorld();
@@ -410,6 +442,14 @@ void UDSPlayerInputComponent::Input_Weapon_Attack_Completed(const FInputActionVa
 		return;
 	}
 	DefaultAttack(SkillTag);
+	
+	ADSCharacter* Character = GetPawn<ADSCharacter>();
+
+	if (IsValid(Character))
+	{
+		//콤보 취소
+		Character->SetNextComboCommand(false);
+	}
 }
 
 void UDSPlayerInputComponent::DefaultAttack(FGameplayTag SkillTag)
@@ -427,7 +467,6 @@ void UDSPlayerInputComponent::DefaultAttack(FGameplayTag SkillTag)
 		{
 			return;
 		}
-
 		ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
 		if (IsValid(Character))
 		{
@@ -436,13 +475,15 @@ void UDSPlayerInputComponent::DefaultAttack(FGameplayTag SkillTag)
 			{
 				if(true == SkillControlComponent->OnSkillPressedEvents.Contains(SkillTag))
 				{
-					DSEVENT_DELEGATE_INVOKE(SkillControlComponent->OnSkillPressedEvents[SkillTag]);
+					DSEVENT_DELEGATE_INVOKE(SkillControlComponent->OnSkillPressedEvents[SkillTag], SkillTag);
 				}
 			}
-		}
 
+			Character->SetNextComboCommand(true); //콤보 공격에 대한 입력 들어옴
+		}
 		PressedStartTime = World->GetTimeSeconds();
 	}
+	
 }
 
 void UDSPlayerInputComponent::Input_Equipment_Toggle()
@@ -453,21 +494,19 @@ void UDSPlayerInputComponent::Input_Equipment_Toggle()
 	bool bIsEquipped = Character->GetIsEquipped();
 	if (bIsEquipped)
 	{
-		//μ갑쒕떎.
-		Character->UnEquip();
+		//장착을 해제한다.
+		Character->PlayWeaponActionMontage(EWeaponState::Unequipped);
 	}
 	else
 	{
-		//μ갑댁젣쒕떎.
-		Character->Equip();
+		//장착한다.
+		Character->PlayWeaponActionMontage(EWeaponState::Equipped);
 	}
 
 }
 
 void UDSPlayerInputComponent::Input_UI_Inventory(const FInputActionValue& InputActionValue)
 {
-	DS_NETLOG(DSNetLog, Log, TEXT("Inventory"));
-
 	ADSPlayerController* PlayerController = GetController<ADSPlayerController>();
 	if (IsValid(PlayerController))
 	{
@@ -477,15 +516,14 @@ void UDSPlayerInputComponent::Input_UI_Inventory(const FInputActionValue& InputA
 		if (bIsInventoryMode)
 		{
 			PlayerController->SetGameFocusMode();
-			UIManager->PopContentToLayer(FDSTags::GetDSTags().UI_Layer_GameMenu_Inventory);
+			UIManager->PopContentToLayer(FDSTags::GetDSTags().UI_Layer_GameplayUI_CombatInventoryWidget);
 			bIsInventoryMode = false;
 		}
 		else
 		{
 			bIsInventoryMode = true;
-			UIManager->PushContentToLayer(FDSTags::GetDSTags().UI_Layer_GameMenu_Inventory);
+			UIManager->PushContentToLayer(FDSTags::GetDSTags().UI_Layer_GameplayUI_CombatInventoryWidget);
 			PlayerController->SetUIFocusMode();
-			// UI 낅뜲댄듃
 		}
 	}
 }
@@ -494,51 +532,18 @@ void UDSPlayerInputComponent::Input_UI_Status(const FInputActionValue& InputActi
 {
 }
 
-void UDSPlayerInputComponent::Input_Skill_Flight_Begin(const FInputActionValue& InputActionValue)
-{
-	UDSFlightComponent* FlightComponent = GetFlightComponent();
-
-	if (false == IsValid(FlightComponent))
-	{
-		return;
-	}
-
-	if (true == FlightComponent->EnableFlying())
-	{
-		DSEVENT_DELEGATE_INVOKE(OnInputMappingChangedEvent, EInputMappingContextType::FlightIMC);
-		DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::Begin);
-	}
-}
-
 void UDSPlayerInputComponent::Input_Skill_Flight_Up(const FInputActionValue& InputActionValue)
 {
+
 	UDSFlightComponent* FlightComponent = GetFlightComponent();
-	if (false == IsValid(FlightComponent))
-	{
-		return;
-	}
-
-	if (true == FlightComponent->EnableFlying())
-	{
-		DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::Up);
-	}
-
-
-}
-
-void UDSPlayerInputComponent::Input_Skill_Flight_Released(const FInputActionValue& InputActionValue)
-{
-		UDSFlightComponent* FlightComponent = GetFlightComponent();
 
 	if (false == IsValid(FlightComponent))
 	{
 		return;
 	}
 
-	if (true == FlightComponent->EnableFlying())
-	{
-		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Idle);
-	}
+	DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::Up);
+
 }
 
 void UDSPlayerInputComponent::Input_Skill_Flight_Down(const FInputActionValue& InputActionValue)
@@ -550,26 +555,10 @@ void UDSPlayerInputComponent::Input_Skill_Flight_Down(const FInputActionValue& I
 		return;
 	}
 
-	if (true == FlightComponent->EnableFlying())
-	{
-		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Down);
-	}
-	
-	APlayerController* PlayerController = GetController<APlayerController>();
-	if (false == IsValid(PlayerController))
-	{
-		return;
-	}
-	
-	ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
-	if (false == IsValid(Character))
-	{
-		return;
-	}
-
+	DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::Down);
 }
 
-void UDSPlayerInputComponent::Input_Skill_Flight_Dodge(const FInputActionValue& InputActionValue)
+void UDSPlayerInputComponent::Input_Skill_Flight_Begin(const FInputActionValue& InputActionValue)
 {
 	UDSFlightComponent* FlightComponent = GetFlightComponent();
 
@@ -578,44 +567,11 @@ void UDSPlayerInputComponent::Input_Skill_Flight_Dodge(const FInputActionValue& 
 		return;
 	}
 
-	if (true == FlightComponent->EnableFlying())
-	{
-		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Dodge);
-	}
+	//Sprint시 회피가 가능하다.
+	DSEVENT_DELEGATE_INVOKE(FlightComponent->OnFlightStateChanged, EFlightState::Flighted);
 }
 
-void UDSPlayerInputComponent::Input_Skill_Flight_Boost(const FInputActionValue& InputActionValue)
-{
-	UDSFlightComponent* FlightComponent = GetFlightComponent();
-
-	if (false == IsValid(FlightComponent))
-	{
-		return;
-	}
-
-	if (true == FlightComponent->EnableFlying())
-	{
-		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Boost);
-	}
-}
-
-void UDSPlayerInputComponent::Input_Skill_Flight_Boost_Released(const FInputActionValue& InputActionValue)
-{
-	UDSFlightComponent* FlightComponent = GetFlightComponent();
-
-	if (false == IsValid(FlightComponent))
-	{
-		return;
-	}
-
-	if (true == FlightComponent->EnableFlying())
-	{
-		DSEVENT_DELEGATE_INVOKE(GetFlightComponent()->OnFlightStateChanged, EFlightState::Hovering);
-	}
-}
-
-
-void UDSPlayerInputComponent::SetSpeed(ESpeedType TargetwalkSpeed)
+void UDSPlayerInputComponent::SetSpeed(ESpeedType TargetWalkSpeed)
 {
 	APlayerController* PlayerController = GetController<APlayerController>();
 	if (false ==  IsValid(PlayerController))
@@ -633,9 +589,8 @@ void UDSPlayerInputComponent::SetSpeed(ESpeedType TargetwalkSpeed)
 		UDSCharacterMovementComponent* DSMovemnt = Cast<UDSCharacterMovementComponent>(Character->GetCharacterMovement());
 		if (DSMovemnt)
 		{
-			DSMovemnt->SetSpeedCommand(TargetwalkSpeed);
+			DSMovemnt->SetSpeedCommand(TargetWalkSpeed);
 		}
-		
 	}
 }
 
@@ -722,35 +677,6 @@ UDSFlightComponent* UDSPlayerInputComponent::GetFlightComponent() const
 	}
 
 	return FlightComponent;
-}
-
-
-void UDSPlayerInputComponent::SetFlightDirection(const FVector2D& MovementVector)
-{
-	UDSFlightComponent* FlightComponent = GetFlightComponent();
-	
-	if (false == IsValid(FlightComponent))
-	{
-		return;
-	}
-	
-	if(false == FlightComponent->EnableFlying())
-	{
-		return;
-	}
-	
-	APlayerController* PlayerController = GetController<APlayerController>();
-	if (false == IsValid(PlayerController))
-	{
-		return;
-	}
-	
-	ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(PlayerController));
-	if (false == IsValid(Character))
-	{
-		return;
-	}
-
 }
 
 FGameplayTag UDSPlayerInputComponent::ConvertInputTagToSkillTag(const FGameplayTag& InputTag)

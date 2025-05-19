@@ -5,23 +5,59 @@
 UENUM(BlueprintType)
 enum class EFlightState : uint8
 {
-	None,
-	Locked,	// 쿨다운 중이거나 아직 포션을 얻지 못함
-	Begin,
-	Idle,	// 정지 상태
-	Hovering,	// 이동
-	Boost,
-	Up,
+	None,	/* Walk 모드일 때 */
+	Hovering,	/* Fly - Idle/Walk/Boost */
+	Dodge,	/* 회피 */
+	DodgeLeft,
+	DodgetRight,
+	Up,		/* */
 	Down,
-	Dodge,
-	End
+	Landed,
+	Flighted
 };
+
+
+UENUM(BlueprintType)
+enum class ETerrainInclineType : uint8
+{
+    Flat        UMETA(DisplayName = "Flat"),
+    UpHill      UMETA(DisplayName = "Uphill"),
+    DownHill    UMETA(DisplayName = "Downhill")
+};
+
+UENUM(BlueprintType)
+enum class ECameraMode : uint8
+{
+	None	  = 0, 
+	Zoom      = 1,	/*우선 순위 : 1*/
+	Combat    = 2,	/*우선 순위 : 2*/
+	UpHill	  = 3,	/*Default와 우선순위는 같다.*/
+	DownHill  = 4,  /*아래도 동일*/
+	Default   = 5,	/*우선 순위 : 3*/
+};
+
+
+UENUM(BlueprintType)
+enum class EWeaponState : uint8
+{
+	Unequipped UMETA(DisplayName = "Unequipped"),
+	Equipped   UMETA(DisplayName = "Equipped"),
+	Attack	   UMETA(DisplayName = "Attack")
+};
+
 UENUM(BlueprintType)
 enum class ESkillActivationStatus : uint8
 {
 	Before,
 	InProgress,
 	After,
+};
+
+UENUM(BlueprintType)
+enum class EAlertStatus : uint8
+{
+	InventoryFull	UMETA(DisplayName = "Inventory Full"),
+	DeliveryFailed	UMETA(DisplayName = "Delivery Failed"),
 };
 
 UENUM(BlueprintType)
@@ -56,6 +92,7 @@ enum class EDataTableType : uint8
 	BoySkillAttributeData,
 	MisterSkillAttributeData,
 	ItemData,
+	InputData,
 	ItemVehicleData,
 	ItemPotionData,
 	ItemGrenadeData,
@@ -105,12 +142,13 @@ UENUM(BlueprintType)
 enum class ESkillType : uint8
 {
 	None,
-	Skill1,						//QSkill,
-	Skill2,						//ESKill,
-	FarmingSkill,			// RSkill,
-	UltimateSkill,			// XSkill, 
+	Skill1,					//QSkill,
+	Skill2,					//ESKill,
+	FarmingSkill,			// XSkill, 
+	UltimateSkill,			// RSkill,
 	PrimarySkill, 			//MouseLSkill,
 	SecondarySkill,			//MouseRSkill,
+	DodgeSkill,				//DodgeSkill
 	TestSkill
 };
 
@@ -126,6 +164,15 @@ namespace ESkillActivationMode
 		Rejected		// 서버가 예측을 거절
 	};
 }
+
+
+UENUM(BlueprintType)
+enum class ESkillCooldownPolicy : uint8
+{
+	None,
+	CooldownAfterEnd,
+	CooldownAfterActive
+};
 
 /**
  * 	@스킬이 실행될 때 어떻게 인스턴스화 되는지 결정.
@@ -182,17 +229,31 @@ enum class ESkillReplicationPolicy : uint8
 UENUM(BlueprintType)
 enum class  ESkillNetSecurityPolicy :uint8
 {
-	/** What protections does this ability have? Should the client be allowed to request changes to the execution of the ability? */
-	// No security requirements. Client or server can trigger execution and termination of this ability freely.
+	/** 
+	 * 클라이언트와 서버 모두 자유롭게 스킬 실행/종료가 가능함.
+	 * 보안이 전혀 없음. 디버깅이나 싱글플레이용 설정.
+	 */
 	ClientOrServer			UMETA(DisplayName = "Client Or Server"),
 
-	// A client requesting execution of this ability will be ignored by the server. Clients can still request that the server cancel or end this ability.
+		/** 
+	 * 클라이언트가 스킬을 실행하려는 요청은 서버에서 무시됨.
+	 * 하지만 스킬을 취소하거나 종료하려는 요청은 수락됨.
+	 * → 스킬 실행은 서버만 가능, 종료는 클라도 요청 가능.
+	 */
 	ServerOnlyExecution		UMETA(DisplayName = "Server Only Execution"),
 
-	// A client requesting cancellation or ending of this ability will be ignored by the server. Clients can still request execution of the ability.
+	/** 
+	 * 클라이언트가 스킬을 실행하는 것은 허용됨.
+	 * 하지만 취소/종료 요청은 서버에서 무시됨.
+	 * → 스킬은 클라이언트가 발동할 수 있지만, 종료는 서버만 판단.
+	 */
 	ServerOnlyTermination	UMETA(DisplayName = "Server Only Termination"),
 
-	// Server controls both execution and termination of this ability. A client making any requests will be ignored.
+	/** 
+	 * 스킬의 실행과 종료 모두 서버만 허용됨.
+	 * 클라이언트의 모든 요청은 무시됨.
+	 * → 완전한 서버 전용 제어 정책 (가장 엄격함).
+	 */
 	ServerOnly				UMETA(DisplayName = "Server Only"),
 };
 
@@ -242,6 +303,7 @@ enum class EItemType
 UENUM(BlueprintType)
 enum class EDSStatType : uint8
 {
+	None,
 	MaxHP,				///< 최대 체력 (기본 생명력)
 	Attack,				///< 공격력
 	Defense,			///< 방어력 (받는 데미지 감소)
@@ -351,4 +413,14 @@ enum class EWeaponType : uint8
 	None,
 	Gun,
 	Sword
+};
+
+/**
+ * @brief 인벤토리 종류
+ */
+UENUM(BlueprintType)
+enum class EInventoryCategory : uint8
+{
+	PersonalItem,
+	PersonalVehicle
 };

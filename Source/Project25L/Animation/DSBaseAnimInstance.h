@@ -32,10 +32,10 @@ protected:
 	TObjectPtr<UDSFlightComponent> FlightComponent;
 
 	UPROPERTY(Transient, BlueprintReadOnly)
-	EFlightState FlightState;
+	uint8 bIsFlying : 1;
 
 	UPROPERTY(Transient, BlueprintReadOnly)
-	uint8 bIsFlying : 1;
+	uint8 bIsBoost : 1;
 
 	UPROPERTY(Transient, BlueprintReadOnly)
 	float FlightLeanX;
@@ -87,6 +87,12 @@ protected:
 
 	UPROPERTY(Transient, BlueprintReadOnly)
 	uint8 bShouldMove : 1;
+
+	UPROPERTY(Transient, BlueprintReadOnly)
+	uint8 bIsDodge : 1;
+
+	UPROPERTY(Transient, BlueprintReadOnly)
+	float Direction;
 
 	UPROPERTY(EditAnywhere, Category = "DSSettings | Threshold")
 	float MovingThreshold;

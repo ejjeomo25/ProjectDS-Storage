@@ -27,7 +27,6 @@ public:
 
 	virtual void BeginPlay() override;
 	void InitializeWidgets();
-
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Widgets")
 	TSubclassOf<UDSPrimaryLayout> PrimaryLayoutClass;

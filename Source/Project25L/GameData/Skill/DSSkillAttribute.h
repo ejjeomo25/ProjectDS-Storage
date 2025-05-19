@@ -24,14 +24,17 @@ struct  FDSSkillAttribute : public FTableRowBase
 
 public:
 	FDSSkillAttribute() :
-		MaxCooltime(0.0f)
+		Damage(0.f)
+		, MaxCooltime(0.0f)
 		, AutoAimAngle(0.0f)
-		, AttackRange(0.f)
-		, InputThresholdOffset(0.f)
+		, SkillRadius(0.f)
+		, InputThreshold(0.f)
 		, SkillDuration(0.f)
 		, Effects()
 	{
 	}
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
+	float Damage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
 	float MaxCooltime;
@@ -40,14 +43,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
 	float AutoAimAngle;
 
+	/* 스킬 범위 => SkillRadius */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
-	float AttackRange;
+	float SkillRadius;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
-	float InputThresholdOffset;
+	float InputThreshold;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
 	float SkillDuration;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
+	float MinDodgeSpeed;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
+	float MaxDodgeSpeed;
 
 	/*스킬 발동시 보여줄 이펙트*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Skill")
@@ -61,17 +71,15 @@ struct  FDSSkillAttribute_Girl : public FDSSkillAttribute
 
 public:
 	FDSSkillAttribute_Girl() :
-		AttackRadius(0.0f)
-		, GravityImpulse(0.0f)
+		SKillDistance(0.0f)
+		, SkillWaitTime(0.0f)
 	{
 	}
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SkillAttribute)
-	float AttackRadius;
+	/* 총구에서부터 Linetrace를 쏘는 거리 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Category = "DSSettings | Girls")
+	float SKillDistance;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SkillAttribute)
-	float GravityImpulse;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SkillAttribute)
-	float SkillDelay;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DSSettings | Girls")
+	float SkillWaitTime;
 };

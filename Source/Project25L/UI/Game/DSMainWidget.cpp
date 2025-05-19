@@ -3,11 +3,21 @@
 
 // UE
 #include "Components/VerticalBox.h"
+#include "Components/Overlay.h"
+#include "Components/TextBlock.h"
 
 // Game
-#include "UI/Game/Player/DS_HPBar.h"
+#include "Character/Characters/DSCharacter.h"
+#include "Components/DSInventoryComponent.h"
+#include "System/DSEventSystems.h"
+#include "System/DSGameUtils.h"
+#include "UI/Game/Player/DSHPBar.h"
 #include "UI/Game/Player/DSPlayerInfo.h"
+#include "UI/Item/DSItemPickupSlot.h"
 
+#include <Player/DSPlayerController.h>
+#include <Kismet/GameplayStatics.h>
+#include <Game/DSGameMode.h>
 UDSMainWidget::UDSMainWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -37,9 +47,78 @@ void UDSMainWidget::NativeConstruct()
 			}
 		}
 	}
+
+	DSEVENT_DELEGATE_BIND(GameEvent.OnCharacterSpawned, this, &UDSMainWidget::InvalidateWidget);
+
 }
 
-UDS_HPBar* UDSMainWidget::GetHPBar(int32 PlayerIndex)
+
+void UDSMainWidget::InvalidateWidget()
+{
+	ADSCharacter* Character = Cast<ADSCharacter>(UDSGameUtils::GetCharacter(GetOwningPlayer()));
+
+	if (false == IsValid(Character))
+	{
+		return;
+	}
+
+	UDSInventoryComponent* Inventory = Character->GetInventoryComponent();
+	if (false == IsValid(Inventory))
+	{
+		return;
+	}
+
+	if (IsValid(ItemPickupSlot))
+	{
+		DSEVENT_DELEGATE_BIND(Inventory->OnItemAcquired, this, &UDSMainWidget::SetupItemPickupSlot);
+		ItemPickupSlot->SetVisibility(ESlateVisibility::Collapsed);
+		ItemPickupSlot->InvalidateWidget(Inventory);
+	}
+
+	if (IsValid(Overlay_AlertType))
+	{
+		Overlay_AlertType->SetVisibility(ESlateVisibility::Collapsed);
+		DSEVENT_DELEGATE_BIND(Inventory->OnInventoryFull, this, &UDSMainWidget::SetupAlertComment);
+	}
+}
+
+void UDSMainWidget::SetupItemPickupSlot(int32 ItemID, bool bRemoved)
+{
+	if (false == bRemoved)
+	{
+		ItemPickupSlot->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
+}
+
+void UDSMainWidget::SetupAlertComment(EAlertStatus AlertStatus)
+{
+	if (AlertComment.Contains(AlertStatus))
+	{
+		FText& AlertText = AlertComment[AlertStatus];
+
+		if (IsValid(Text_AlertComment))
+		{
+			Text_AlertComment->SetText(AlertText);
+		}
+
+		if (IsValid(Overlay_AlertType))
+		{
+			Overlay_AlertType->SetVisibility(ESlateVisibility::Visible);
+			FTimerHandle TimerHandleAlert;
+			GetWorld()->GetTimerManager().SetTimer(TimerHandleAlert,this, &UDSMainWidget::HideAlertOverlay,1.0f, false);
+		}
+	}
+}
+
+void UDSMainWidget::HideAlertOverlay()
+{
+	if (IsValid(Overlay_AlertType))
+	{
+		Overlay_AlertType->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+UDSHPBar* UDSMainWidget::GetHPBar(int32 PlayerIndex)
 {
 	if (PlayerInfos.IsValidIndex(PlayerIndex))
 	{

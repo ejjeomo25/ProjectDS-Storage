@@ -15,9 +15,9 @@
 UDSBaseAnimInstance::UDSBaseAnimInstance()
 	:
 	Super()
-	, Owner(nullptr)
 	, FlightComponent(nullptr)
-	, FlightState(EFlightState::None)
+	, bIsFlying(false)
+	, bIsBoost(false)
 	, FlightLeanX(0.f)
 	, FlightLeanY(0.f)
 	, HoverSpeedX(0.f)
@@ -25,6 +25,7 @@ UDSBaseAnimInstance::UDSBaseAnimInstance()
 	, HoverSpeedZ(0.f)
 	, HoverMaxSpeed(0.f)
 	, IKAlpha(1.0f)
+	, Owner(nullptr)
 	, Movement(nullptr)
 	, Velocity(FVector::ZeroVector)
 	, CurrentSpeed(0.f)
@@ -33,6 +34,8 @@ UDSBaseAnimInstance::UDSBaseAnimInstance()
 	, bIsFalling(false)
 	, bIsJumping(false)
 	, bShouldMove(false)
+	, bIsDodge(false)
+	, Direction(0.f)
 	, MovingThreshold(3.0f)
 	, JumpingThreshold(30.f)
 
@@ -81,6 +84,14 @@ void UDSBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		HoverMaxSpeed = Movement->MaxFlySpeed;
 	}
 
+	ADSCharacter* DSCharacter = Cast<ADSCharacter>(Owner);
+
+	if (IsValid(DSCharacter))
+	{
+		bIsDodge = DSCharacter->GetIsDodge();
+		Direction = CalculateDirection(Velocity, DSCharacter->GetActorRotation());
+	}
+
 	if (IsValid(FlightComponent))
 	{
 		FVector2D Lean = FlightComponent->GetLean();
@@ -96,6 +107,7 @@ void UDSBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		float DestIKAlpha = bIsFlying == true ? 0.0f : 1.0f;
 
 		IKAlpha = FMath::FInterpTo(IKAlpha, DestIKAlpha, DeltaSeconds, 10.f);
-		FlightState = FlightComponent->GetFlightState();
+		bIsBoost = 200 < CurrentSpeed; /*450은 캐릭터마다 바뀔 수 있는 값*/
 	}
+
 }

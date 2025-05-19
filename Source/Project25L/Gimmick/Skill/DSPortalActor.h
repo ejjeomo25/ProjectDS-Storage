@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // Default
 #include "CoreMinimal.h"
 
@@ -23,6 +23,7 @@ public:
 	ADSPortalActor();
 
 	void SetExitLocation(FVector InExitLocation);
+	void SetPortalSurfaceType(EDSPortalSurfaceType InPortalSurfaceType);
 	void OnPortalSpawned();
 	void OnActivatePortal();
 	void OnResetPortal();
@@ -75,4 +76,6 @@ protected:
 
 	FTimerHandle TeleportTimerHandle;
 	FTimerHandle CancelSkillTimerHandle;
+
+	EDSPortalSurfaceType PortalSurfaceType;
 };

@@ -17,4 +17,5 @@ class PROJECT25L_API UAnimNotifyState_EquipWeapon : public UAnimNotifyState
 	
 public:
 	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference);
+
 };

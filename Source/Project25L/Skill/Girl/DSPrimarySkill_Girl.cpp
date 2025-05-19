@@ -13,10 +13,11 @@
 UDSPrimarySkill_Girl::UDSPrimarySkill_Girl(const FObjectInitializer& ObjectInitalize)
 	: Super(ObjectInitalize)
 {
-	bSkillHasCooltime = false;
+	CooldownPolicy = ESkillCooldownPolicy::None;
 	InstancingPolicy = ESkillInstancingPolicy::InstancedPerActor;
 	NetExecutionPolicy = ESkillNetExecutionPolicy::ServerInitiated;
 	ReplicationPolicy = ESkillReplicationPolicy::ReplicateYes;
+	NetSecurityPolicy =  ESkillNetSecurityPolicy::ClientOrServer;
 }
 
 void UDSPrimarySkill_Girl::CallActivateSkill(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo)
@@ -29,6 +30,7 @@ void UDSPrimarySkill_Girl::ActivateSkill(const FDSSkillSpecHandle Handle, const 
 {
 	Super::ActivateSkill(Handle, ActorInfo);
 
+	DS_LOG(DSSkillLog, Log, TEXT("%s"), *UEnum::GetValueAsString(CurrentSkillType));
 	if (nullptr != ActorInfo)
 	{
 		ADSArmedCharacter* Character = Cast<ADSArmedCharacter>(ActorInfo->SkillOwner.Get());
@@ -42,12 +44,9 @@ void UDSPrimarySkill_Girl::ActivateSkill(const FDSSkillSpecHandle Handle, const 
 				return;
 			}
 
-			Weapon->AttackPrimarySkill(AutoAimAngle, 400.f);
+			Weapon->AttackPrimarySkill(AutoAimAngle, SkillDistance, SkillDamage);
 		}
-
 	}
-
-	EndSkill(Handle, ActorInfo, true, false);
 }
 
 void UDSPrimarySkill_Girl::EndSkill(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo, bool bReplicateEndSkill, bool bWasCancelled)

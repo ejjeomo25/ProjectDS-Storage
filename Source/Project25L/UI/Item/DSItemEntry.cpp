@@ -41,7 +41,7 @@ void UDSItemEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
 
 	if (nullptr != ItemData)
 	{
-		Text_ItemName->SetText(FText::FromString(ItemData->ItemName));
+		Text_ItemName->SetText(ItemData->ItemName);
 	}
 
 	SetFocus(ItemActor->bIsSelected);

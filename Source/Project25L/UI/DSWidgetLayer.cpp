@@ -10,7 +10,10 @@
 UDSWidgetLayer::UDSWidgetLayer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, Stack()
+<<<<<<< HEAD
 	, CreatedWidgetsMap()
+=======
+>>>>>>> 6d97a8e7eb31f849c4f7006f89fed6a9f4c3c463
 {
 }
 

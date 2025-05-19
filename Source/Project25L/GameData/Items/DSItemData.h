@@ -22,38 +22,42 @@ struct FDSItemData: public FTableRowBase
 
 public:
 	FDSItemData()
-		: ItemName(TEXT(""))
+		: ItemName()
 		, ItemHolder(0x00)
 		, Probability(0.0f)
 		, ActorClass(nullptr)
-		, Description(TEXT(""))
+		, Description()
+		, Tooltip()
 	{}
 
-	UPROPERTY(EditAnywhere, Category = Name)
-	FString ItemName;
+	UPROPERTY(EditAnywhere, Category = "DSSettings | UI")
+	FText ItemName;
 	
-	UPROPERTY(EditAnywhere, Category = Holder)
+	UPROPERTY(EditAnywhere, Category = "DSSettings | Character")
 	uint8 ItemHolder;
 
-	UPROPERTY(EditAnywhere, Category = Name)
+	UPROPERTY(EditAnywhere, Category = "DSSettings | UI")
 	TSoftObjectPtr<UTexture2D> ItemLogo;
 
-	UPROPERTY(EditAnywhere, Category = Name)
+	UPROPERTY(EditAnywhere, Category = "DSSettings | UI")
 	TSoftObjectPtr<UMaterialInterface> ItemTileMaterial;
 
-	UPROPERTY(EditAnywhere, Category = Name)
+	UPROPERTY(EditAnywhere, Category = "DSSettings | UI")
 	TSoftObjectPtr<UMaterialInterface> ItemTileMaterialRotated;
 
-	UPROPERTY(EditAnywhere, Category = Prop)
+	UPROPERTY(EditAnywhere, Category = "DSSettings | Prop")
 	float Probability;
 
-	UPROPERTY(EditAnywhere, Category = Actor)
+	UPROPERTY(EditAnywhere, Category = "DSSettings | Actor")
 	TSoftClassPtr<AActor> ActorClass;
 
-	UPROPERTY(EditAnywhere, Category = Desc)
-	FString Description;
+	UPROPERTY(EditAnywhere, Category = "DSSettings | UI")
+	FText Description;
 
-	UPROPERTY(EditAnywhere, Category = Dimensions)
+	UPROPERTY(EditAnywhere, Category = "DSSettings | UI")
+	FText Tooltip;
+
+	UPROPERTY(EditAnywhere, Category = "DSSettings | UI")
 	FIntPoint Dimensions;
 	
 };
@@ -105,15 +109,26 @@ public:
 USTRUCT(BlueprintType)
 struct FPersonalInventoryInfo
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPersonalInventoryInfo()
+		: Columns(0), Rows(0), TileSize(0)
+	{
+	}
+
+	UPROPERTY()
 	int32 Columns;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY()
 	int32 Rows;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY()
 	int32 TileSize;
+	UPROPERTY()
+	EItemType ItemType;
+
+	FPersonalInventoryInfo(int32 InColumns, int32 InRows, int32 InTileSize, EItemType InItemType)
+		: Columns(InColumns), Rows(InRows), TileSize(InTileSize), ItemType(InItemType)
+	{}
 };
 
 
@@ -139,20 +154,3 @@ struct FDSLine
 	}
 
 };
-
-
-// STRUCT(BlueprintType)
-// truct FIntPoint
-// 	
-// 	GENERATED_BODY()
-// 	UPROPERTY()
-// 	int X;
-// 
-// 	UPROPERTY()
-// 	int Y;
-// 
-// 	bool operator==(const FIntPoint& Other) const
-// 	{
-// 		return X == Other.X && Y == Other.Y;
-// 	}
-// ;

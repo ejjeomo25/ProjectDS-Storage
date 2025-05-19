@@ -1,15 +1,15 @@
-//Default
+﻿//Default
 #include "GameData/GameplayTag/DSGameplayTags.h"
 
 // UE
 #include "GameplayTagsManager.h"
 
+// Game
+#include "GameData/DSEnums.h"
 FDSTags FDSTags::GameplayTags;
 
 void FDSTags::InitializeNativeGameplayTags()
 {
-	//  GameplayTags.InputTag_Move = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Move"), FString("이동 버튼 Input Tag"));
-
 	//********************************************************
 	// Enhanced Input
 	// Move
@@ -23,6 +23,7 @@ void FDSTags::InitializeNativeGameplayTags()
 	// System
 	GameplayTags.InputTag_Pause = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Pause"));
 	GameplayTags.InputTag_Interaction = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Interaction"));
+	GameplayTags.InputTag_Zoom = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Zoom"));
 
 	// Skill
 	GameplayTags.InputTag_Skill_PrimarySkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.PrimarySkill"));
@@ -31,7 +32,7 @@ void FDSTags::InitializeNativeGameplayTags()
 	GameplayTags.InputTag_Skill_Skill2 = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.Skill2"));
 	GameplayTags.InputTag_Skill_UltimateSkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.UltimateSkill"));
 	GameplayTags.InputTag_Skill_FarmingSkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.FarmingSkill"));
-
+	GameplayTags.InputTag_Skill_DodgeSkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.DodgeSkill"));
 
 	// Item
 	GameplayTags.InputTag_Item_QuickSlot1 = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Item.QuickSlot1"));
@@ -51,17 +52,16 @@ void FDSTags::InitializeNativeGameplayTags()
 	GameplayTags.InputTag_Skill_Flight_Begin = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.Flight.Begin"));
 	GameplayTags.InputTag_Skill_Flight_Up = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.Flight.Up"));
 	GameplayTags.InputTag_Skill_Flight_Down = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.Flight.Down"));
-	GameplayTags.InputTag_Skill_Flight_Dodge = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.Flight.Dodge"));
-	GameplayTags.InputTag_Skill_Flight_Boost = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("InputTag.Skill.Flight.Boost"));
 
 	//********************************************************
 	// UI Layer
-	GameplayTags.UI_Layer_GameMenu = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.GameMenu"));
+	GameplayTags.UI_Layer_GameplayUI = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.GameplayUI"));
 	GameplayTags.UI_Layer_Modal = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.Modal"));
-	GameplayTags.UI_Layer_Game = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.Game"));
-	GameplayTags.UI_Layer_Game_Main = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.Game.Main"));
+	GameplayTags.UI_Layer_Persistent = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.Persistent"));
+	GameplayTags.UI_Layer_Persistent_Main = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.Persistent.Main"));
 
-	GameplayTags.UI_Layer_GameMenu_Inventory = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.GameMenu.Inventory"));
+	GameplayTags.UI_Layer_GameplayUI_CombatInventoryWidget = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.GameplayUI.CombatInventoryWidget"));
+	GameplayTags.UI_Layer_GameplayUI_CombatLootWidget = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("UI.Layer.GameplayUI.CombatLootWidget"));
 	
 
 	//********************************************************
@@ -73,7 +73,25 @@ void FDSTags::InitializeNativeGameplayTags()
 	GameplayTags.Skill_FarmingSkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Skill.FarmingSkill"));
 	GameplayTags.Skill_UltimateSkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Skill.UltimateSkill"));
 	GameplayTags.Skill_TestSkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Skill.TestSkill"));
-	GameplayTags.Skill_Skill1_Installation = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Skill.Skill1.Installation"));
 	GameplayTags.Skill_None = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Skill.NoneSkill"));
+	GameplayTags.Skill_DodgeSkill = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Skill.DodgeSkill"));
 	
+
+	GameplayTags.SkillType.Add({ GameplayTags.InputTag_Skill_PrimarySkill, ESkillType::PrimarySkill });
+	GameplayTags.SkillType.Add({ GameplayTags.InputTag_Skill_SecondarySkill, ESkillType::SecondarySkill });
+	GameplayTags.SkillType.Add({ GameplayTags.InputTag_Skill_Skill1, ESkillType::Skill1 });
+	GameplayTags.SkillType.Add({ GameplayTags.InputTag_Skill_Skill2, ESkillType::Skill2 });
+	GameplayTags.SkillType.Add({ GameplayTags.InputTag_Skill_UltimateSkill, ESkillType::UltimateSkill });
+	GameplayTags.SkillType.Add({ GameplayTags.InputTag_Skill_FarmingSkill, ESkillType::FarmingSkill });
+	GameplayTags.SkillType.Add({ GameplayTags.InputTag_Skill_DodgeSkill, ESkillType::DodgeSkill });
+
+
+	GameplayTags.SkillType.Add({ GameplayTags.Skill_PrimarySkill, ESkillType::PrimarySkill });
+	GameplayTags.SkillType.Add({ GameplayTags.Skill_SecondarySkill, ESkillType::SecondarySkill });
+	GameplayTags.SkillType.Add({ GameplayTags.Skill_Skill1, ESkillType::Skill1 });
+	GameplayTags.SkillType.Add({ GameplayTags.Skill_Skill2, ESkillType::Skill2 });
+	GameplayTags.SkillType.Add({ GameplayTags.Skill_UltimateSkill, ESkillType::UltimateSkill });
+	GameplayTags.SkillType.Add({ GameplayTags.Skill_FarmingSkill, ESkillType::FarmingSkill });
+	GameplayTags.SkillType.Add({ GameplayTags.Skill_DodgeSkill, ESkillType::DodgeSkill });
+
 }

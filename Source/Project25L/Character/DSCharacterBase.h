@@ -23,11 +23,11 @@ class PROJECT25L_API ADSCharacterBase : public ACharacter
 public:
 	ADSCharacterBase(const FObjectInitializer& ObjectInitializer);
 
+	UAnimInstance* GetAnimInstance();
 	UDSSkillControlComponent* GetSkillControlComponent() const { return SkillControlComponent; }
 	UDSStatComponent* GetStatComponent() const { return StatComponent; }
 public:
 	virtual float TakeFinalDamage(float DamageAmount, const FDSDamageEvent& NewDamageEvent, class AController* EventInstigator, AActor* DamageCauser);
-
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;

@@ -1,4 +1,4 @@
-//Defualt
+﻿//Defualt
 #include "Components/DSStatComponent.h"
 
 //UE
@@ -34,9 +34,11 @@ static const TMap<EDSStatType, float FDSCharacterStat::*> StatMemberMap =
 
 UDSStatComponent::UDSStatComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, ActiveBuffs(nullptr)
 	, NextBuffID(0)
 {
 	bWantsInitializeComponent = true;
+	ActiveBuffs = this;
 }
 
 void UDSStatComponent::InitializeComponent()
@@ -56,6 +58,7 @@ void UDSStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UDSStatComponent, CurrentStat);
 	DOREPLIFETIME(UDSStatComponent, HP);
+	DOREPLIFETIME(UDSStatComponent, ActiveBuffs);
 }
 
 void UDSStatComponent::InitializeStats(EDataTableType InDataTableType, ECharacterType InCharacterType, int32 InNonCharacterID)
@@ -126,7 +129,6 @@ void UDSStatComponent::OnRep_HP()
 }
 
 
-
 float UDSStatComponent::GetDefaultStatByEnum(EDSStatType StatType) const
 {
 	float FDSCharacterStat::* const* MemberPtr = StatMemberMap.Find(StatType);
@@ -143,7 +145,7 @@ float UDSStatComponent::GetFinalStat(EDSStatType StatType) const
 	float TotalAddend = 0.f;
 	float TotalMultiplier = 0.f;
 
-	for (const FBuffEntry& Entry : ActiveBuffs)
+	for (const FBuffEntry& Entry : ActiveBuffs.Entries)
 	{
 		if (Entry.StatType == StatType)
 		{
@@ -189,12 +191,9 @@ void UDSStatComponent::PostUpdateCurrentStat()
 void UDSStatComponent::ApplyBuff(EDSStatType InStatType, EOperationType InOperationType, float InBuffValue, float InDuration)
 {
 	// 새로운 버프 항목 생성 및 추가
-	FBuffEntry NewEntry;
-	NewEntry.StatType = InStatType;
-	NewEntry.OperationType = InOperationType;
-	NewEntry.BuffID = NextBuffID++;
-	NewEntry.BuffValue = InBuffValue;
-	ActiveBuffs.Add(NewEntry);
+	FBuffEntry NewEntry(InStatType, InOperationType, NextBuffID++, InBuffValue);
+	ActiveBuffs.Entries.Add_GetRef(MoveTemp(NewEntry));
+	ActiveBuffs.MarkItemDirty(NewEntry);
 
 	DS_LOG(DSStatLog, Log, TEXT("[%s] %s 버프 적용: ID=%d, %s %f, 지속시간: %f초"), *GetName(), *UEnum::GetValueAsString(InStatType), NewEntry.BuffID, *UEnum::GetValueAsString(InOperationType), InBuffValue, InDuration);
 
@@ -203,11 +202,11 @@ void UDSStatComponent::ApplyBuff(EDSStatType InStatType, EOperationType InOperat
 	FTimerDelegate TimerDelegate;
 	TimerDelegate.BindUObject(this, &UDSStatComponent::RemoveBuff, NewEntry.BuffID);
 
-
-	check(GetWorld());
-	if (GetWorld())
+	UWorld* World = GetWorld();
+	check(IsValid(World));
+	if (IsValid(World))
 	{
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, InDuration, false);
+		World->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, InDuration, false);
 		BuffTimerHandles.Add(NewEntry.BuffID, TimerHandle);
 	}
 
@@ -217,7 +216,7 @@ void UDSStatComponent::ApplyBuff(EDSStatType InStatType, EOperationType InOperat
 void UDSStatComponent::RemoveBuff(int32 InBuffID)
 {
 	// 버프 ID를 기준으로 해당 항목을 검색 후 제거
-	int32 RemovedIndex = ActiveBuffs.IndexOfByPredicate([InBuffID](const FBuffEntry& Entry)
+	int32 RemovedIndex = ActiveBuffs.Entries.IndexOfByPredicate([InBuffID](const FBuffEntry& Entry)
 		{
 			return Entry.BuffID == InBuffID;
 		});
@@ -225,12 +224,13 @@ void UDSStatComponent::RemoveBuff(int32 InBuffID)
 	if (RemovedIndex != INDEX_NONE)
 	{
 #if WITH_EDITOR
-		float RemovedBuffValue = ActiveBuffs[RemovedIndex].BuffValue;
-		EDSStatType RemovedBuffStatType = ActiveBuffs[RemovedIndex].StatType;
-		EOperationType RemovedBuffOperationType = ActiveBuffs[RemovedIndex].OperationType;
-		DS_LOG(DSStatLog, Log, TEXT("[%s] %s 버프 제거: ID=%d, %s %f"), *GetName(), *UEnum::GetValueAsString(RemovedBuffStatType), InBuffID, *UEnum::GetValueAsString(RemovedBuffOperationType), RemovedBuffValue);
+		float RemovedBuffValue = ActiveBuffs.Entries[RemovedIndex].BuffValue;
+		EDSStatType RemovedBuffStatType = ActiveBuffs.Entries[RemovedIndex].StatType;
+		EOperationType RemovedBuffOperationType = ActiveBuffs.Entries[RemovedIndex].OperationType;
+		DS_LOG(DSStatLog, Log, TEXT("%s 버프 제거: ID=%d, %s %f"), *UEnum::GetValueAsString(RemovedBuffStatType), InBuffID, *UEnum::GetValueAsString(RemovedBuffOperationType), RemovedBuffValue);
 #endif
-		ActiveBuffs.RemoveAt(RemovedIndex);
+		ActiveBuffs.Entries.RemoveAt(RemovedIndex);
+		ActiveBuffs.MarkArrayDirty();
 		BuffTimerHandles.Remove(InBuffID);
 
 		UpdateCurrentStat();
@@ -247,3 +247,50 @@ void UDSStatComponent::RecoverHealth_Implementation(float HealAmount, EHealType 
 	ModifyHP(HealAmount);
 }
 
+//void FBuffArray::ApplyBuff(EDSStatType InStatType, EOperationType InOperationType, float InBuffValue, float InDuration)
+//{
+//	// 새로운 버프 항목 생성 및 추가
+//	FBuffEntry NewEntry(InStatType, InOperationType, NextBuffID++, InBuffValue);
+//	Entries.Add_GetRef(MoveTemp(NewEntry));
+//	MarkItemDirty(NewEntry);
+//
+//	DS_LOG(DSStatLog, Log, TEXT("%s 버프 적용: ID=%d, %s %f, 지속시간: %f초"), *UEnum::GetValueAsString(InStatType), NewEntry.BuffID, *UEnum::GetValueAsString(InOperationType), InBuffValue, InDuration);
+//
+//	// 버프 제거 타이머 설정
+//	FTimerHandle TimerHandle;
+//	FTimerDelegate TimerDelegate;
+//	TimerDelegate.BindUObject(this, &FBuffArray::RemoveBuff, NewEntry.BuffID);
+//
+//	UWorld* World = Owner->GetWorld();
+//	check(World);
+//	if (World)
+//	{
+//		World->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, InDuration, false);
+//		BuffTimerHandles.Add(NewEntry.BuffID, TimerHandle);
+//	}
+//
+//	Owner->UpdateCurrentStat();
+//}
+
+//void FBuffArray::RemoveBuff(int32 InBuffID)
+//{
+//	// 버프 ID를 기준으로 해당 항목을 검색 후 제거
+//	int32 RemovedIndex = Entries.IndexOfByPredicate([InBuffID](const FBuffEntry& Entry)
+//		{
+//			return Entry.BuffID == InBuffID;
+//		});
+//
+//	if (RemovedIndex != INDEX_NONE)
+//	{
+//#if WITH_EDITOR
+//		float RemovedBuffValue = Entries[RemovedIndex].BuffValue;
+//		EDSStatType RemovedBuffStatType = Entries[RemovedIndex].StatType;
+//		EOperationType RemovedBuffOperationType = Entries[RemovedIndex].OperationType;
+//		DS_LOG(DSStatLog, Log, TEXT("%s 버프 제거: ID=%d, %s %f"), *UEnum::GetValueAsString(RemovedBuffStatType), InBuffID, *UEnum::GetValueAsString(RemovedBuffOperationType), RemovedBuffValue);
+//#endif
+//		Entries.RemoveAt(RemovedIndex);
+//		BuffTimerHandles.Remove(InBuffID);
+//
+//		Owner->UpdateCurrentStat();
+//	}
+//}

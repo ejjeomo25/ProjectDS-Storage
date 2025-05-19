@@ -76,6 +76,7 @@ void UDSPrimaryLayout::ClearLayer(FGameplayTag WidgetTag)
 void UDSPrimaryLayout::RegisterLayers()
 {
 
+<<<<<<< HEAD
 	if (IsValid(GameMenuLayer) && IsValid(ModalLayer) && IsValid(GameLayer))
 	{
 		LayersMap.Add(FDSTags::GetDSTags().UI_Layer_GameMenu, GameMenuLayer);
@@ -87,5 +88,13 @@ void UDSPrimaryLayout::RegisterLayers()
 	{
 		GameLayer->PushWidget(FDSTags::GetDSTags().UI_Layer_Game_Main);
 	}
+=======
+	if (IsValid(GameMenuLayer) && IsValid(ModalLayer))
+	{
+		LayersMap.Add(FDSTags::GetDSTags().UI_Layer_GameMenu, GameMenuLayer);
+		LayersMap.Add(FDSTags::GetDSTags().UI_Layer_Modal,  ModalLayer);
+	}
+	
+>>>>>>> 6d97a8e7eb31f849c4f7006f89fed6a9f4c3c463
 }
 

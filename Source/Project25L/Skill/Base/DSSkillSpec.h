@@ -137,9 +137,11 @@ struct PROJECT25L_API FDSSkillSpec : public FFastArraySerializerItem
 	*/
 
 	/** 스킬 타입 */
+	UPROPERTY()
 	FGameplayTag SkillTag;
 
 	/** 스킬 타입 */
+	UPROPERTY()
 	ESkillType SkillType;
 
 	/** 이 스킬이 실행될 때 해당 태그가 있는 스킬을 강제 종료함 */

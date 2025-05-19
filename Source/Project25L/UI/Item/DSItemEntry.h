@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Default
 #include "CoreMinimal.h"
@@ -7,7 +7,7 @@
 #include "Blueprint/IUserObjectListEntry.h"
 
 // Game
-#include "UI/DSUserWidget.h"
+#include "UI/Base/DSFocusedWidget.h"
 
 // UHT
 #include "DSItemEntry.generated.h"
@@ -16,7 +16,7 @@ class UImage;
 class UTextBlock;
 
 UCLASS()
-class PROJECT25L_API UDSItemEntry : public UDSUserWidget, public IUserObjectListEntry
+class PROJECT25L_API UDSItemEntry : public UDSFocusedWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
 	

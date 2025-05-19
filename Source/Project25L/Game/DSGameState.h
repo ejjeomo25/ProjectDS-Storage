@@ -30,6 +30,8 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
 protected:
+	UPROPERTY(Transient)
+	uint8 bIsSpawned;
 
 	UPROPERTY(EditAnywhere, Category = "DSSettings | MaxCount")
 	int32 MaxPlayerCount;

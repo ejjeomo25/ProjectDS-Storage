@@ -9,7 +9,7 @@
 #include "AI/DSAIControllerBase.h"
 #include "Components/DSStatComponent.h"
 #include "GameData/DSNonCharacterStat.h"
-#include "UI/Game/Player/DS_HPBar.h"
+#include "UI/Game/Player/DSHPBar.h"
 #include "System/DSEventSystems.h"
 
 ADSNonCharacter::ADSNonCharacter(const FObjectInitializer& ObjectInitializer)
@@ -76,12 +76,12 @@ void ADSNonCharacter::BeginPlay()
 		HealthComponent->SetDrawSize(FVector2D(60.f, 15.0f));
 		HealthComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		UDS_HPBar* HPBarWidget = Cast<UDS_HPBar>(HealthComponent->GetWidget());
+		UDSHPBar* HPBarWidget = Cast<UDSHPBar>(HealthComponent->GetWidget());
 
 		if (IsValid(HPBarWidget))
 		{
 			/*초기화 => StatComponent가 이미 초기화 된 이후에 이 함수가 호출되어진다.*/
-			DSEVENT_DELEGATE_BIND(StatComponent->OnHPChanged, HPBarWidget, &UDS_HPBar::SetHP);
+			DSEVENT_DELEGATE_BIND(StatComponent->OnHPChanged, HPBarWidget, &UDSHPBar::SetHP);
 			//초기화 해준다.
 			DSEVENT_DELEGATE_INVOKE(StatComponent->OnHPChanged, StatComponent->GetCurrentHP(), StatComponent->GetMaxHP());
 		}

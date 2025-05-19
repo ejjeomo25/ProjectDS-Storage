@@ -47,7 +47,6 @@ void UDSGameDataSubsystem::LoadAllDataAssetsAsync()
 	LoadDataAssetAsync<ECharacterType, UDSCharacterDataAsset>();
 	LoadDataAssetAsync<int32, UDSNonCharacterDataAsset>();
 
-
 }
 
 void UDSGameDataSubsystem::LoadDataTables()

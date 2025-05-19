@@ -20,6 +20,7 @@
 struct FDSSkillSpec;
 struct FDSSkillActorInfo;
 class UDSSkillControlComponent;
+class UNiagaraSystem;
 
 /**
  * 
@@ -104,6 +105,10 @@ public:
 		return NetSecurityPolicy;
 	}
 
+	ESkillCooldownPolicy GetCooldownPolicy() const
+	{
+		return CooldownPolicy;
+	}
 	// --------------------------------------
 	//	Interaction with Skill Control component
 	// --------------------------------------
@@ -111,12 +116,16 @@ public:
 	/** Called by skill SkillControlComponent to inform this skill instance the remote instance was ended */
 	virtual void SetRemoteInstanceHasEnded();
 
-	virtual void Tick(float DeltaSeconds) { }
+	/* Component의 BeginPlay에서 호출되기 때문에, 획득한 스킬은 호출되지 않는다.*/
+	virtual void BeginPlay() ;
+	void Tick(float DeltaTime);
+	virtual void InternalTick(float DeltaTime) { };
+	virtual void OnUnregister() { }
 	/** Called to inform the skill that the AvatarActor has been replaced. If the skill is dependent on avatar state, it may want to end itself. */
 	virtual void NotifyAvatarDestroyed();
 
 	/** Called when the skill is Added to an SkillControlComponent */
-	virtual void OnAddSkill(const FDSSkillActorInfo* ActorInfo, ESkillType InSkillType, const FDSSkillSpec& Spec);
+	virtual void OnAddSkill(const FDSSkillActorInfo* ActorInfo, ESkillType& InSkillType, const FDSSkillSpec& Spec);
 
 	/** Called when the skill is removed from an SkillControlComponent */
 	virtual void OnRemoveSkill(const FDSSkillActorInfo* ActorInfo, const FDSSkillSpec& Spec) ;
@@ -142,7 +151,7 @@ public:
 	const FDSSkillActorInfo* GetCurrentActorInfo() const { return CurrentActorInfo; }
 
 	/** Modifies actor info, only safe on instanced abilities */
-	virtual void SetCurrentActorInfo(const FDSSkillSpecHandle Handle, const ESkillType InType, const FDSSkillActorInfo* ActorInfo) ;
+	virtual void SetCurrentActorInfo(const FDSSkillSpecHandle Handle, ESkillType& InType, const FDSSkillActorInfo* ActorInfo) ;
 
 	bool IsActive() const;
 
@@ -179,6 +188,7 @@ public:
 	//	CallActivateSkill
 	// --------------------------------------
 	virtual void PreActivate(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo);
+
 	// 스킬의 핵심 기능을 실행하며, 파생 클래스에서 오버라이드하여 구체적인 로직을 구현하는 함수
 	virtual void ActivateSkill(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo);
 	
@@ -202,11 +212,6 @@ protected:
 	/** 재사용 대기 시간을 확인하는 함수. 다시 사용할 수 있으면 true, 그렇지 않으면 false return*/
 	virtual bool CheckCooldown(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo) const;
 	virtual void ApplyCooldown(const FDSSkillActorInfo* ActorInfo);
-
-	// --------------------------------------
-	//	Skill Duration
-	// --------------------------------------
-	virtual void OnSkillDurationFinished(const FDSSkillSpecHandle Handle, const FDSSkillActorInfo* ActorInfo);
 
 	// --------------------------------------
 	//	ISkillLifeCycle
@@ -287,44 +292,58 @@ protected:
 	//	Protected properties
 	// -------------------------------------
 	/** How an skill replicates state/events to everyone on the network. Replication is not required for NetExecutionPolicy. */
-	UPROPERTY(EditDefaultsOnly, Category = Advanced)
+	UPROPERTY(EditDefaultsOnly, Category = "DSSettings | Policy")
 	ESkillReplicationPolicy ReplicationPolicy;
 
 	/** How the skill is instanced when executed. This limits what an skill can do in its implementation. */
-	UPROPERTY(EditDefaultsOnly, Category = Advanced)
+	UPROPERTY(EditDefaultsOnly, Category = "DSSettings | Policy")
 	ESkillInstancingPolicy	InstancingPolicy;
 
 		/** How does an skill execute on the network. Does a client "ask and predict", "ask and wait", "don't ask (just do it)". */
-	UPROPERTY(EditDefaultsOnly, Category=Advanced)
+	UPROPERTY(EditDefaultsOnly, Category="DSSettings | Policy")
 	ESkillNetExecutionPolicy NetExecutionPolicy = ESkillNetExecutionPolicy::ServerInitiated;
 
-	UPROPERTY(EditDefaultsOnly, Category = Advanced)
+	UPROPERTY(EditDefaultsOnly, Category = "DSSettings | Policy")
 	ESkillNetSecurityPolicy NetSecurityPolicy;
 
-	mutable const FDSSkillActorInfo* CurrentActorInfo;
-
-	mutable FDSSkillSpecHandle CurrentSpecHandle;
+	UPROPERTY(EditDefaultsOnly, Category = "DSSettings | Policy")
+	ESkillCooldownPolicy CooldownPolicy;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "DSSettings | SkillType")
 	mutable ESkillType CurrentSkillType;
+
+	mutable const FDSSkillActorInfo* CurrentActorInfo;
+	
+	UPROPERTY()
+	mutable FDSSkillSpecHandle CurrentSpecHandle;
 
 	UPROPERTY()
 	FDSSkillActivationInfo	CurrentActivationInfo;
 
-/////////////////////////////////////////////////////// SkillSpec ///////////////////////////////////////////////////////
+/////////////////////////////////////////////////////// SkillData ///////////////////////////////////////////////////////
 	UPROPERTY(Transient)
 	float MaxCooltime = 100.f;
 	UPROPERTY(Transient)
 	float AutoAimAngle;
 	UPROPERTY(Transient)
-	float AttackRange;
+	float SkillRadius;
 	UPROPERTY(Transient)
 	float InputThresholdOffset;
 	UPROPERTY(Transient)
 	float SkillDuration;
+	UPROPERTY(Transient)
+	float SkillDamage;
+	
+	UPROPERTY(Transient)
+	float DodgeMaxSpeed;
+	UPROPERTY(Transient)
+	float DodgeMinSpeed;
+	UPROPERTY(Transient)
+	TMap<ESkillActivationStatus, TSoftObjectPtr<UNiagaraSystem>> Effects;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DSSettings | Cooltime")
-	uint8 bSkillHasCooltime : 1;
+	// UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DSSettings | Cooltime")
+	// uint8 bSkillHasCooltime : 1;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DSSettings | SkillDuration")
 	uint8 bSkillHasDuration: 1;
@@ -350,5 +369,13 @@ protected:
 	uint8 RemoteInstanceEnded : 1;
 	UPROPERTY()
 	uint8 bIsSkillEnding : 1;
+	
+	/** Tick 실행시 Tick 호출 간격을 정할 수 있다. 0.f 매 Tick이 호출될 때마다 호출한다. */
+	UPROPERTY(EditAnywhere, Category = "DSSettings | Tick")
+	float TickInterval;
+	
+	UPROPERTY(Transient)
+	float ElapsedTime;
+
 };
 

@@ -16,8 +16,9 @@ class PROJECT25L_API ADSCharacter_Girl : public ADSArmedCharacter
 	GENERATED_BODY()
 	
 public:
-	ADSCharacter_Girl(const FObjectInitializer& ObjectInitializer) ;
+	ADSCharacter_Girl(const FObjectInitializer& ObjectInitializer);
 
 protected:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 };

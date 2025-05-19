@@ -6,6 +6,7 @@
 
 //UE
 #include "GameFramework/CheatManager.h"
+#include "GameplayTagContainer.h"
 
 //UHT
 #include "DSCheatManager.generated.h"
@@ -62,6 +63,9 @@ public:
 
 	UFUNCTION(Exec, BlueprintAuthorityOnly, Category=Skill)
 	void DisplaySkillCooltime(const int32 InputID);
+
+	UFUNCTION(Exec, BlueprintAuthorityOnly, Category=Skill)
+	void DisplaySkillCooltimeFromTag(const FGameplayTag SkillTag);
 
 	/**
 	*  @brief			아이템 보관하는 치트

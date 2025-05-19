@@ -9,6 +9,7 @@
 #include "GameData/Skill/DSSkillAttribute.h"
 #include "GameData/Physics/DSCollision.h"
 #include "Components/DSStatComponent.h"
+#include "Components/Input/DSPlayerInputComponent_Mister.h"
 #include "Components/Skill/DSSkillControlComponent_Mister.h"
 #include "DSLogChannels.h"
 
@@ -16,12 +17,7 @@ ADSCharacter_Mister::ADSCharacter_Mister(const FObjectInitializer& ObjectInitial
 	: Super(ObjectInitializer)
 {
 	SkillControlComponent = CreateDefaultSubobject<UDSSkillControlComponent_Mister>(TEXT("SkillControlComponent"));
-
-}
-
-float ADSCharacter_Mister::GetInputThreshold()
-{
-	return 0.5f;
+	DSPlayerInputComponent = CreateDefaultSubobject<UDSPlayerInputComponent_Mister>(TEXT("DSPlayerInputComponent"));
 }
 
 void ADSCharacter_Mister::AttackHitCheck(const FName& HitSocket, const ESkillType& SkillTag)

@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "Item/DSGiftBox.h"
 
 // UE
@@ -9,7 +9,7 @@
 #include "System/DSEventSystems.h"
 #include "System/DSGameUtils.h"
 #include "system/DSUIManagerSubsystem.h"
-#include "UI/DSWidgetLayer.h"
+#include "UI/Base/DSWidgetLayer.h"
 #include "UI/Item/DSItemList.h"
 
 #include "DSLogChannels.h"

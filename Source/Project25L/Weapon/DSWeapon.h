@@ -26,12 +26,9 @@ public:
 	USkeletalMeshComponent* GetMesh() const { return Mesh; }
 	float GetInputThreshold() { return InputThreshold; }
 
-	virtual void AttackPrimarySkill(const float& AutoAimAngle, const float& AttackDistance) const;
-	virtual void AttackSkill1(const FVector& TargetLocation, const float& AttackRadius, const float& Impulse);
-	virtual void AttackSkill2(const float& AutoAimAngle, const float& AttackDistance, const float& AttackRadius);
+	virtual void AttackPrimarySkill(const float& AutoAimAngle, const float& AttackDistance, const float& SkillDamage) const;
 	virtual void EndPrimaryAttack() const;
 	virtual void EndAttackSkill1();
-
 	/* 클래스를 상속받았을 경우 반드시 구현해주어야하는 함수입니다. */
 	virtual FVector GetFinalDestination(const float& AimAngle, const float& SkillDistance) const;
 
@@ -39,7 +36,7 @@ protected:
 
 	/*auto targeting*/
 	//무기를 가진 모든 캐릭터는 오토 타겟팅이 가능하기 때문에 Weapon함수에 존재.
-	FVector GetAutoTargetingLocation(const float& AimAngle, const float& AttackRadius) const;
+	FVector GetAutoTargetingLocation(const float& AimAngle, const FVector& StartLocation, const FVector& TargetLocation, const float& AttackRadius) const;
 
 	virtual void InitializeData();
 protected:

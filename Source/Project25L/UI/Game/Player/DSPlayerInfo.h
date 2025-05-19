@@ -6,10 +6,13 @@
 // UE
 #include "Blueprint/UserWidget.h"
 
+// Game
+#include "GameData/DSEnums.h"
+
 // UHT
 #include "DSPlayerInfo.generated.h"
 
-class UDS_HPBar;
+class UDSHPBar;
 class UTextBlock;
 class UImage;
 
@@ -25,11 +28,13 @@ public:
 public:
 	void SetText(float CurrentHP, float MaxHP);
 
-	UDS_HPBar* GetHPBar() { return ProgressBar_HP; }
+	UDSHPBar* GetHPBar() { return ProgressBar_HP; }
+	//닉네임을 업데이트 하는 함수
+	void InitPlayerSetting(ECharacterType CharacterType, FText PlayerName);
 protected:
 	
 	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UDS_HPBar> ProgressBar_HP;
+	TObjectPtr<UDSHPBar> ProgressBar_HP;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UImage> IMG_PlayerIcon;

@@ -1,10 +1,12 @@
-#pragma once
+﻿#pragma once
 //Default
 #include "CoreMinimal.h"
 
 //UE
 #include "GameplayTagContainer.h"
 
+//Game
+#include "GameData/DSEnums.h"
 
 struct FDSTags
 {
@@ -26,6 +28,7 @@ public:
 	// System
 	FGameplayTag InputTag_Pause;
 	FGameplayTag InputTag_Interaction;
+	FGameplayTag InputTag_Zoom;
 
 	// Skill
 	FGameplayTag InputTag_Skill_PrimarySkill;
@@ -34,6 +37,7 @@ public:
 	FGameplayTag InputTag_Skill_Skill2;
 	FGameplayTag InputTag_Skill_UltimateSkill;
 	FGameplayTag InputTag_Skill_FarmingSkill;
+	FGameplayTag InputTag_Skill_DodgeSkill;
 
 	// Item
 	FGameplayTag InputTag_Item_QuickSlot1;
@@ -53,31 +57,32 @@ public:
 	FGameplayTag InputTag_Skill_Flight_Begin;
 	FGameplayTag InputTag_Skill_Flight_Up;
 	FGameplayTag InputTag_Skill_Flight_Down;
-	FGameplayTag InputTag_Skill_Flight_Dodge;
-	FGameplayTag InputTag_Skill_Flight_Boost;
 
 	//********************************************************
 	// Layer UI
-	FGameplayTag UI_Layer_GameMenu;
+	FGameplayTag UI_Layer_GameplayUI;
 	FGameplayTag UI_Layer_Modal;
 
-	FGameplayTag UI_Layer_GameMenu_Inventory;
-	FGameplayTag UI_Layer_Game;
-	FGameplayTag UI_Layer_Game_Main;
-
-
+	FGameplayTag UI_Layer_GameplayUI_CombatInventoryWidget;
+	FGameplayTag UI_Layer_GameplayUI_CombatLootWidget;
+	
+	FGameplayTag UI_Layer_Persistent;
+	FGameplayTag UI_Layer_Persistent_Main;
 	//********************************************************
 	// Skill
 	FGameplayTag Skill_None;
 	FGameplayTag Skill_PrimarySkill;
 	FGameplayTag Skill_SecondarySkill;
 	FGameplayTag Skill_Skill1;
-	FGameplayTag Skill_Skill1_Installation;
 	FGameplayTag Skill_Skill2;
 	FGameplayTag Skill_FarmingSkill;
 	FGameplayTag Skill_UltimateSkill;
+	FGameplayTag Skill_DodgeSkill;
 	FGameplayTag Skill_TestSkill;
+
+	TMap<FGameplayTag, ESkillType> SkillType;
 
 private:
 	static FDSTags GameplayTags;
+
 };

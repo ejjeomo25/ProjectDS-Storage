@@ -2,6 +2,7 @@
 #include "Components/DSFlightComponent.h"
 
 // UE
+#include "Animation/AnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -10,22 +11,21 @@
 #include "Character/Characters/DSCharacter.h"
 #include "Components/DSPlayerInputComponent.h"
 #include "DSCharacterMovementComponent.h"
-#include "DSLogChannels.h"
 #include "System/DSEventSystems.h"
+
+#include "DSLogChannels.h"
 
 UDSFlightComponent::UDSFlightComponent()
 	: Super()
-	, Lean(0.f, 0.f)
 	, CurrentState(EFlightState::None)
-	, DefaultGravityScale(0.f)
 	, LastVelocityRotation()
 	, PreVelocityRotation()
+	, Lean(0.f, 0.f)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	bWantsInitializeComponent = true;
 }
 
-// Called when the game starts
 void UDSFlightComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
@@ -38,7 +38,7 @@ void UDSFlightComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if(CurrentState == EFlightState::Down)
+	if (CurrentState == EFlightState::Down)
 	{
 		ACharacter* Character = Cast<ACharacter>(GetOwner());
 
@@ -56,10 +56,11 @@ void UDSFlightComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 		if (true == MovementComponent->CanLand())
 		{
-			SetFlightState(EFlightState::End);
+			SetFlightState(EFlightState::Landed);
 		}
 	}
-	//else if(CurrentState == EFlightState::Hovering)
+
+	else if(CurrentState == EFlightState::Hovering)
 	{
 		ACharacter* Character = Cast<ACharacter>(GetOwner());
 
@@ -95,59 +96,13 @@ void UDSFlightComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 }
 
-void UDSFlightComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void UDSFlightComponent::ServerRPC_ChangeFlightMode_Implementation(EFlightState FlightMode)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(UDSFlightComponent, CurrentState);
+	//Replicate 되어진다.
+	CurrentState = FlightMode;
 }
 
-void UDSFlightComponent::BeginFlight()
-{
-	ServerRPC_BeginFlight();
-}
-
-void UDSFlightComponent::EndFlight()
-{
-	ServerRPC_EndFlight();
-
-	// 쿨타임이 있다면 Lock으로 바껴야 함
-	SetFlightState(EFlightState::None);
-
-	ADSCharacter* Character = Cast< ADSCharacter>(GetOwner());
-	DSEVENT_DELEGATE_INVOKE(Character->GetPlayerInputComponent()->OnInputMappingChangedEvent, EInputMappingContextType::DefaultIMC);
-}
-
-bool UDSFlightComponent::EnableFlying() const
-{
-	return CurrentState == EFlightState::Locked ? false : true;
-}
-
-void UDSFlightComponent::Dodge()
-{
-	// 인풋 방향에 따라, Animation이 재생될 듯
-	// BlendSpace로
-}
-
-void UDSFlightComponent::Hovering()
-{
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
-
-	if (false == IsValid(Character))
-	{
-		return;
-	}
-
-	UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement();
-
-	if (IsValid(MovementComponent))
-	{
-		MovementComponent->Velocity.Z = 0;
-	}
-
-}
-
-void UDSFlightComponent::MoveFlight(EFlightState Direction)
+void UDSFlightComponent::MoveUpDown(EFlightState Direction)
 {
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
 
@@ -162,65 +117,47 @@ void UDSFlightComponent::MoveFlight(EFlightState Direction)
 	}
 }
 
-void UDSFlightComponent::OnChangeFlightBegin()
+void UDSFlightComponent::HandleFlightStateChanged(EFlightState FlightMode)
 {
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	ADSCharacter* Character = Cast<ADSCharacter>(GetOwner());
 
 	if (false == IsValid(Character))
 	{
 		return;
 	}
 
-	UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement();
-
-	if (IsValid(MovementComponent))
-	{
-		DefaultGravityScale = MovementComponent->GravityScale;
-		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying);
-		MovementComponent->GravityScale *= GravityCoefficient;
-	}
-}
-
-void UDSFlightComponent::OnChangeFlightEnd()
-{
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
-
-	if (false == IsValid(Character))
-	{
-		return;
-	}
-
-	UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement();
-
-	if (IsValid(MovementComponent))
-	{
-		MovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
-		MovementComponent->GravityScale = DefaultGravityScale;
-	}
-}
-
-void UDSFlightComponent::ServerRPC_BeginFlight_Implementation()
-{
-	OnChangeFlightBegin();
-}
-void UDSFlightComponent::ServerRPC_EndFlight_Implementation()
-{
-	OnChangeFlightEnd();
+	bool bIsFlighted = FlightMode != EFlightState::Landed;
+	
+	DSEVENT_DELEGATE_INVOKE(Character->OnMovementModeChanged, bIsFlighted, false);
 }
 
 void UDSFlightComponent::SetFlightState(EFlightState NewState)
 {
-	CurrentState = NewState;
-
-	switch (CurrentState)
+	// Flight 상태에 따라서 변화한다.
+	switch (NewState)
 	{
-	case EFlightState::Begin: BeginFlight(); break;
-	case EFlightState::Up: MoveFlight(EFlightState::Up); break;
-	case EFlightState::Down: MoveFlight(EFlightState::Down); break;
-	case EFlightState::Hovering: Hovering(); break;
-	case EFlightState::Dodge: Dodge(); break;
-	case EFlightState::End: EndFlight(); break;
+	case EFlightState::Up:
+	case EFlightState::Down:
+		MoveUpDown(NewState);
+		break;
+	case EFlightState::Flighted:
+	case EFlightState::Landed:
+		HandleFlightStateChanged(NewState);
+		break;
+	}
+
+	//Down를 제외한 모든 경우의 수는 나는 경우의 수이다. (Down은 Landed로 변경 가능하기 때문이다.)
+	EFlightState UpdatedFlightState = NewState != EFlightState::Down? EFlightState::Hovering : NewState;
+
+	if (CurrentState != UpdatedFlightState)
+	{
+		ServerRPC_ChangeFlightMode(UpdatedFlightState);
 	}
 }
 
+void UDSFlightComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(UDSFlightComponent, CurrentState);
+}

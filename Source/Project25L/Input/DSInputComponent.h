@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 //Default
 #include "CoreMinimal.h"
 
@@ -32,8 +32,13 @@ public:
 	void BindDualActions(const UDSInputConfig* InputConfig, const FGameplayTag& InputTag, UserClass* Object, PressedFuncType PressedFunc, ReleasedFuncType ReleasedFunc);
 
 	template <class UserClass, typename PressedFuncType, typename HeldFuncType, typename ReleasedFuncType>
-	void BindSkillActions(const UDSInputConfig* InputConfig, const FGameplayTag& InputTag, UserClass* Object, PressedFuncType PressedFunc, HeldFuncType HeldFunc, ReleasedFuncType ReleasedFunc);
+	void BindSkillActions(const UDSInputConfig* InputConfig, const FGameplayTag& SkillTag, UserClass* Object, PressedFuncType PressedFunc, HeldFuncType HeldFunc, ReleasedFuncType ReleasedFunc);
+	
+	template<class UserClass, typename PressedFuncType, typename ReleasedFuncType>
+	void BindSkillActions(const UDSInputConfig* InputConfig, const FGameplayTag& SkillTag, UserClass* Object, PressedFuncType PressedFunc, ReleasedFuncType ReleasedFunc);
+
 	void RemoveBinds(const UInputAction* InputAction);
+
 
 	TArray<FEnhancedInputActionEventBinding*>  FindActionEventBinding(const UInputAction* InputAction);
 };
@@ -83,6 +88,24 @@ void UDSInputComponent::BindSkillActions(const UDSInputConfig* InputConfig, cons
 		if (HeldFunc)
 		{
 			BindAction(IA, ETriggerEvent::Triggered, Object, HeldFunc, SkillTag);
+		}
+		if (ReleasedFunc)
+		{
+			BindAction(IA, ETriggerEvent::Completed, Object, ReleasedFunc, SkillTag);
+		}
+	}
+}
+
+template<class UserClass, typename PressedFuncType, typename ReleasedFuncType>
+inline void UDSInputComponent::BindSkillActions(const UDSInputConfig* InputConfig, const FGameplayTag& SkillTag, UserClass* Object, PressedFuncType PressedFunc, ReleasedFuncType ReleasedFunc)
+{
+	check(InputConfig);
+
+	if (const UInputAction* IA = InputConfig->FindTripleInputActionsForTag(SkillTag))
+	{
+		if (PressedFunc)
+		{
+			BindAction(IA, ETriggerEvent::Started, Object, PressedFunc, SkillTag);
 		}
 		if (ReleasedFunc)
 		{

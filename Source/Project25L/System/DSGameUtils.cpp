@@ -83,6 +83,13 @@ void UDSGameUtils::GenerateUniqueSpreadOffset(float SpreadCoef)
 			SpreadOffsets.Add(Raw);
 		}
 	}
+
+	//정렬한다.
+	SpreadOffsets.Sort([](const int32& Num1, const int32& Num2)
+		{
+			/*음수, 양수 상관 없이 값의 크기에 따라서 정렬한다.*/
+			return FMath::Abs(Num1) < FMath::Abs(Num2);
+		});
 }
 
 ACharacter* UDSGameUtils::GetCharacter(const APlayerController* PlayerController)
@@ -186,6 +193,14 @@ void UDSGameUtils::LoadSpreadOffset(FString Path, float SpreadCoef)
 	}
 }
 
+float UDSGameUtils::GetSeparationAngle(const FVector& A, const FVector& B)
+{	
+	// (a*b)/(|a||b|)=cos(theta)
+	const float& CosTheta = FVector::DotProduct(A, B);
+	const float& AngleRadians = FMath::Acos(CosTheta); // 라디안 값
+	const float& AngleDegrees = FMath::RadiansToDegrees(AngleRadians);
+	return AngleDegrees;
+}
 FString UDSGameUtils::ReadFromFile(FString FilePath, bool& bOutSuccess)
 {
 	FPlatformFileManager &PlatformFileManager = FPlatformFileManager::Get();

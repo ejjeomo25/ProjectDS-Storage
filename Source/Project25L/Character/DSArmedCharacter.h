@@ -10,13 +10,6 @@
 // UHT
 #include "DSArmedCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class EWeaponState : uint8
-{
-	Unequipped UMETA(DisplayName = "Unequipped"),
-	Equipped   UMETA(DisplayName = "Equipped"),
-	Attack	   UMETA(DisplayName = "Attack")
-};
 
 UENUM(BlueprintType)
 enum class EWeaponSocketType : uint8
@@ -41,28 +34,24 @@ public:
 	ADSWeapon* GetWeapon() { return Weapon; }
 	bool GetIsEquipped() { return bIsEquipped; }
 
-	virtual float GetInputThreshold() override;
-
 public:
 /*무기를 장착하고, 무기와 관련된 애니메이션 몽타주를 실행하는 함수*/
-	void Equip();
-	
-	void UnEquip();
-	
+	void PlayWeaponActionMontage(EWeaponState WeaponState);
+
 	void MoveEquip();
 
-	void LoadWeapon();
-
 	void PlayAnimation(EWeaponState WeaponState);
-
-protected:
 /*RPC*/
 	UFUNCTION(Server, Reliable)
-	void ServerRPC_EquipWeapon(EWeaponState EquipState);
+	void ServerRPC_PlayWeaponAction(EWeaponState EquipState);
+protected:
 
 	UFUNCTION(Client, Reliable)
-	void ClientRPC_EquipWeapon(ADSArmedCharacter* Character, EWeaponState EquipState);
+	void ClientRPC_PlayWeaponAction(ADSArmedCharacter* Character, EWeaponState EquipState);
 	
+protected:
+	void LoadWeaponMontage();
+	void LoadWeapon();
 protected:
 /*Unreal Engine 기본 함수*/
 	virtual void BeginPlay() override;

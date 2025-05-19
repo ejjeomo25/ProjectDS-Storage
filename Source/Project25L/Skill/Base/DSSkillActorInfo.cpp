@@ -39,7 +39,7 @@ void FDSSkillActorInfo::InitFromActor(AActor* InOwnerActor, AActor* InAvatarActo
 
 	// Look for a player controller or pawn in the owner chain.
 	AActor* TestActor = InOwnerActor;
-	while (TestActor)
+	while (IsValid(TestActor))
 	{
 		if (APlayerController* CastPC = Cast<APlayerController>(TestActor))
 		{
@@ -57,12 +57,12 @@ void FDSSkillActorInfo::InitFromActor(AActor* InOwnerActor, AActor* InAvatarActo
 	}
 
 	// Notify ASC if PlayerController was found for first time
-	if (OldPC == nullptr && PlayerController.IsValid())
+	if (false == IsValid(OldPC) && PlayerController.IsValid())
 	{
 		InSkillControlComponent->OnPlayerControllerSet();
 	}
-
-	if (AActor* const AvatarActorPtr = SkillAvatar.Get())
+	AActor* const AvatarActorPtr = SkillAvatar.Get();
+	if (true == IsValid(AvatarActorPtr))
 	{
 		// Grab Components that we care about
 		SkeletalMeshComponent = AvatarActorPtr->FindComponentByClass<USkeletalMeshComponent>();
@@ -79,7 +79,7 @@ UAnimInstance* FDSSkillActorInfo::GetAnimInstance() const
 {
 	const USkeletalMeshComponent* SKMC = SkeletalMeshComponent.Get();
 
-	if (SKMC)
+	if (IsValid(SKMC))
 	{
 		if (AffectedAnimInstanceTag != NAME_None)
 		{

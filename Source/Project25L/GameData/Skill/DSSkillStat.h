@@ -35,4 +35,6 @@
 	float AttackRadius = 50.f;
 	UPROPERTY(EditAnywhere, Category = PunchComboSkill)
 	float AttackDamage = 30.f;
+
+
 };

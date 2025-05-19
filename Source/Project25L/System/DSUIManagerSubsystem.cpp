@@ -1,4 +1,4 @@
-// Default
+﻿// Default
 #include "System/DSUIManagerSubsystem.h"
 
 // UE
@@ -10,8 +10,8 @@
 #include "DSLogChannels.h"
 #include "Player/DSPlayerController.h"
 #include "System/DSGameInstance.h"
-#include "UI/DSPrimaryLayout.h"
-#include "UI/DSWidgetLayer.h"
+#include "UI/Base/DSPrimaryLayout.h"
+#include "UI/Base/DSWidgetLayer.h"
 
 
 UDSUIManagerSubsystem::UDSUIManagerSubsystem()
@@ -117,8 +117,9 @@ void UDSUIManagerSubsystem::SetMovementEnable(ACharacter* Character, bool bEnabl
 
 bool UDSUIManagerSubsystem::RegisterWidget(UDSPrimaryLayout* Widget)
 {
-	if (false == IsValid(PrimaryWidget) && IsValid(Widget))
+	if (IsValid(Widget))
 	{
+		//포인터 변경으로 GC에 의해 처리하도록 한다.
 		PrimaryWidget = Widget;
 		return true;
 	}

@@ -49,6 +49,18 @@ ADSCharacterBase::ADSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	StatComponent = CreateDefaultSubobject<UDSStatComponent>(TEXT("StatComponent"));
 }
 
+UAnimInstance* ADSCharacterBase::GetAnimInstance()
+{
+	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+
+	if (IsValid(SkeletalMeshComponent))
+	{
+		return SkeletalMeshComponent->GetAnimInstance();
+	}
+
+	return nullptr;
+}
+
 float ADSCharacterBase::TakeFinalDamage(float DamageAmount, const FDSDamageEvent& NewDamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	UDSStatComponent* StatComponentPtr = GetStatComponent();
@@ -86,6 +98,7 @@ void ADSCharacterBase::InitSkillActorInfo()
 	if (GetSkillControlComponent())
 	{
 		GetSkillControlComponent()->InitSkillActorInfo(this, this);
+		GetSkillControlComponent()->InitializeSkillSpecs();
 	}
 }
 

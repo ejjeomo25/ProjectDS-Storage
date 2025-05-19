@@ -6,6 +6,8 @@
 #include "Components/TextBlock.h"
 
 // Game
+#include "GameFramework/PlayerState.h"
+#include "GameData/DSCharacterDataAsset.h"
 #include "System/DSGameDataSubsystem.h"
 #include "Player/DSPlayerController.h"
 
@@ -18,18 +20,7 @@ void UDSPlayerInfo::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	//플레이어 이미지로 로드한다.
-	ADSPlayerController* PlayerController = GetOwningPlayer<ADSPlayerController>();
-	
-	if (IsValid(PlayerController))
-	{
-		ECharacterType CharacterType = PlayerController->GetCharacterType();
 
-		UDSGameDataSubsystem *DataSubsystem = UDSGameDataSubsystem::Get(PlayerController);
-
-		check(DataSubsystem);
-
-	}
 }
 
 void UDSPlayerInfo::SetText(float CurrentHP, float MaxHP)
@@ -38,13 +29,40 @@ void UDSPlayerInfo::SetText(float CurrentHP, float MaxHP)
 	{
 		//정수형으로 출력한다.
 		FString Text = FString::Printf(TEXT("%.0f"), CurrentHP);
-
 		Text_HP->SetText(FText::FromString(Text));
 	}
 
 	if (IsValid(Text_MaxHP))
 	{
 		FString Text = FString::Printf(TEXT("%.0f"), MaxHP);
-		Text_HP->SetText(FText::FromString(Text));
+		Text_MaxHP->SetText(FText::FromString(Text));
 	}
+}
+
+void UDSPlayerInfo::InitPlayerSetting(ECharacterType CharacterType, FText PlayerName)
+{
+	if (false == IsValid(IMG_PlayerIcon))
+	{
+		return;
+	}
+
+	if (false == IsValid(Text_PlayerName))
+	{
+		return;
+	}
+
+	//플레이어 이미지로 로드한다.
+	UDSGameDataSubsystem* DataSubsystem = UDSGameDataSubsystem::Get(this);
+
+	check(DataSubsystem);
+
+	const UDSCharacterDataAsset* DataAsset = DataSubsystem->GetDataAssetByType<ECharacterType, UDSCharacterDataAsset>(CharacterType);
+
+	if (IsValid(DataAsset))
+	{
+		IMG_PlayerIcon->SetBrushFromSoftTexture(DataAsset->PlayerIcon.LoadSynchronous());
+		
+		Text_PlayerName->SetText(PlayerName);
+	}
+
 }

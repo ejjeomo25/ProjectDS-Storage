@@ -40,54 +40,61 @@ void ADSArmedCharacter::LoadWeapon()
 
 			UDSGameDataSubsystem::StreamableManager.RequestAsyncLoad(WeaponMesh.ToSoftObjectPath(), FStreamableDelegate::CreateLambda([WeakPtr = TWeakObjectPtr<ADSArmedCharacter>(this), WeaponMesh]()
 				{
-					UWorld* World = WeakPtr->GetWorld();
-
-					check(World);
-
-					ADSArmedCharacter* Character = WeakPtr.Get();
-					TSubclassOf<ADSWeapon> WeaponClass = WeaponMesh.Get();
-
-					if (IsValid(Character))
+					if (WeakPtr.IsValid())
 					{
-						FActorSpawnParameters Params;
-						Params.Owner = Character;
+						UWorld* World = WeakPtr->GetWorld();
 
-						Character->Weapon = World->SpawnActor<ADSWeapon>(WeaponClass, FVector::ZeroVector, FRotator(0.f, 90.f, 0.f), Params);
-						Character->Weapon->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("weapon_stow"));
+						check(World);
+
+						ADSArmedCharacter* Character = WeakPtr.Get();
+						TSubclassOf<ADSWeapon> WeaponClass = WeaponMesh.Get();
+
+						if (IsValid(Character))
+						{
+							FActorSpawnParameters Params;
+							Params.Owner = Character;
+
+							Character->Weapon = World->SpawnActor<ADSWeapon>(WeaponClass, FVector::ZeroVector, FRotator(0.f, 90.f, 0.f), Params);
+							Character->Weapon->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, WeakPtr->SocketName[EWeaponSocketType::Stow]);
+						}
 					}
 				}));
 		}
 
-		//애니메이션은 둘 다 가지고 온다.
-		WeaponMontages.Add(EWeaponState::Equipped, WeaponData->EquipMontage.LoadSynchronous());
-		WeaponMontages.Add(EWeaponState::Unequipped, WeaponData->UnEquipMontage.LoadSynchronous());
-		WeaponMontages.Add(EWeaponState::Attack, WeaponData->AttackMontage.LoadSynchronous());
+		TArray<FSoftObjectPath> MontageToStream;
+		
+		for(const auto Montage : WeaponData->Montages)
+		{
+			MontageToStream.AddUnique(Montage.Value.ToSoftObjectPath());
+		}
+
+		UDSGameDataSubsystem::StreamableManager.RequestAsyncLoad(MontageToStream, FStreamableDelegate::CreateLambda(([WeakPtr = TWeakObjectPtr<ADSArmedCharacter>(this), WeaponData]()
+			{
+				if (WeakPtr.IsValid())
+				{
+					if (nullptr != WeaponData)
+					{
+						//애니메이션은 둘 다 가지고 온다.
+						for (const auto Montage : WeaponData->Montages)
+						{
+							WeakPtr->WeaponMontages.Add(Montage.Key, Montage.Value.Get());
+						}
+					}
+				}
+			})));
 	}
 }
 
-void ADSArmedCharacter::Equip()
+void ADSArmedCharacter::PlayWeaponActionMontage(EWeaponState WeaponState)
 {
-	EWeaponState EquipState = EWeaponState::Equipped;
-
-	PlayAnimation(EquipState);
+	PlayAnimation(WeaponState);
 
 	//애니메이션을 실행한다.
-	ServerRPC_EquipWeapon(EquipState);
-}
-
-void ADSArmedCharacter::UnEquip()
-{
-	EWeaponState EquipState = EWeaponState::Unequipped;
-
-	PlayAnimation(EquipState);
-
-	//애니메이션을 실행한다.
-	ServerRPC_EquipWeapon(EquipState);
+	ServerRPC_PlayWeaponAction(WeaponState);
 }
 
 void ADSArmedCharacter::MoveEquip()
 {
-
 	EWeaponSocketType SocketType = EWeaponSocketType::Stow;
 
 	if (bIsEquipped)
@@ -110,6 +117,7 @@ void ADSArmedCharacter::MoveEquip()
 	bIsEquipped = !bIsEquipped;
 }
 
+
 void ADSArmedCharacter::PlayAnimation(EWeaponState WeaponState)
 {
 	if (false == WeaponMontages.Contains(WeaponState))
@@ -121,7 +129,7 @@ void ADSArmedCharacter::PlayAnimation(EWeaponState WeaponState)
 
 	if (IsValid(AnimInstance))
 	{
-		if (AnimInstance->Montage_IsPlaying(WeaponMontages[WeaponState]))
+		if (AnimInstance->IsAnyMontagePlaying())
 		{
 			//현재 애니메이션 몽타주가 실행중임으로 리턴한다.
 			return;
@@ -133,22 +141,7 @@ void ADSArmedCharacter::PlayAnimation(EWeaponState WeaponState)
 	}
 }
 
-float ADSArmedCharacter::GetInputThreshold()
-{
-	if (IsValid(Weapon))
-	{
-		float InputThreshold = Weapon->GetInputThreshold();
-
-		//단발인가? InputThreshold		
-		//스킬인가? InputThreshold*2.f;
-
-		return InputThreshold;
-	}
-
-	return 0.0f;
-}
-
-void ADSArmedCharacter::ServerRPC_EquipWeapon_Implementation(EWeaponState EquipState)
+void ADSArmedCharacter::ServerRPC_PlayWeaponAction_Implementation(EWeaponState EquipState)
 {
 	UWorld* World = GetWorld();
 
@@ -167,14 +160,14 @@ void ADSArmedCharacter::ServerRPC_EquipWeapon_Implementation(EWeaponState EquipS
 				ADSArmedCharacter* OtherPlayer = Cast<ADSArmedCharacter>(PlayerController->GetPawn());
 				if (IsValid(OtherPlayer))
 				{
-					OtherPlayer->ClientRPC_EquipWeapon(this, EquipState);
+					OtherPlayer->ClientRPC_PlayWeaponAction(this, EquipState);
 				}
 			}
 		}
 	}
 }
 
-void ADSArmedCharacter::ClientRPC_EquipWeapon_Implementation(ADSArmedCharacter* Character, EWeaponState EquipState)
+void ADSArmedCharacter::ClientRPC_PlayWeaponAction_Implementation(ADSArmedCharacter* Character, EWeaponState EquipState)
 {
 	if (IsValid(Character))
 	{
